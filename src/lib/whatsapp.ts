@@ -1,8 +1,12 @@
 'use client';
 
-// Twilio WhatsApp API Integration
-// هذا الملف يُستخدم لإرسال واستقبال رسائل WhatsApp
+// تعريف نوع المشرف لضمان سلامة TypeScript
+interface Supervisor {
+  whatsapp_number: string;
+  name?: string;
+}
 
+// Twilio WhatsApp API Integration
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER;
@@ -12,10 +16,10 @@ const TWILIO_WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER;
  */
 export async function sendWhatsAppMessage(to: string, message: string) {
   try {
-    const response = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + TWILIO_ACCOUNT_SID + '/Messages.json', {
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + btoa(TWILIO_ACCOUNT_SID + ':' + TWILIO_AUTH_TOKEN),
+        'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
@@ -35,7 +39,6 @@ export async function sendWhatsAppMessage(to: string, message: string) {
  * استقبال رسالة WhatsApp وتحويلها لبلاغ
  */
 export async function receiveWhatsAppMessage(from: string, body: string) {
-  // تحليل الرسالة وإنشاء بلاغ
   const complaint = {
     source: 'whatsapp',
     reported_by: from,
@@ -51,14 +54,18 @@ export async function receiveWhatsAppMessage(from: string, body: string) {
  * إرسال إشعار للمشرفين
  */
 export async function notifySupervisors(complaint: any) {
-  const supervisors = await getSupervisors();
+  const supervisors: Supervisor[] = await getSupervisors();
+  
   for (const supervisor of supervisors) {
     const message = `بلاغ جديد: ${complaint.description}\nالمدرسة: ${complaint.school_name}\nالأولوية: ${complaint.priority}`;
+    
+    // استخدام whatsapp_number بشكل آمن الآن بعد تعريف النوع
     await sendWhatsAppMessage(supervisor.whatsapp_number, message);
   }
 }
 
-async function getSupervisors() {
+async function getSupervisors(): Promise<Supervisor[]> {
   // جلب المشرفين من قاعدة البيانات
+  // تأكد أن هذه الدالة تعيد مصفوفة من المشرفين
   return [];
 }

@@ -17,8 +17,16 @@ const handler = NextAuth({
       }
     })
   ],
-  pages: { signIn: "/auth/login" },
+  pages: { 
+    signIn: "/auth/login",
+    error: "/auth/login",  // ← أضف هذا
+  },
   session: { strategy: "jwt" },
+  callbacks: {
+    async redirect({ url, baseUrl }) {
+      return baseUrl;  // ← يوجه للرئيسية دائماً
+    },
+  },
 });
 
 export { handler as GET, handler as POST };

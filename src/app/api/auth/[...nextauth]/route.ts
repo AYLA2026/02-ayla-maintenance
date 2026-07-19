@@ -4,13 +4,13 @@ import CredentialsProvider from "next-auth/providers/credentials";
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
+      id: "credentials", // ← أضف هذا
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // تأكد من هذه الأسطر
         console.log("Credentials received:", credentials);
         
         if (credentials?.email === "admin@ayla.com" && credentials?.password === "password") {
@@ -33,7 +33,7 @@ const handler = NextAuth({
   },
   session: { 
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 يوم
+    maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -49,10 +49,11 @@ const handler = NextAuth({
       return session;
     },
     async redirect({ url, baseUrl }) {
-      return baseUrl; // يوجه للرئيسية
+      return baseUrl;
     },
   },
-  debug: true, // ← أضف هذا للتشخيص
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV !== "production",
 });
 
 export { handler as GET, handler as POST };

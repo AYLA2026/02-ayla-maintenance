@@ -1,154 +1,87 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import {
-  Package,
-  Plus,
-  Search,
-  AlertTriangle,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Warehouse, InventoryItem } from '@/types';
-
-const mockWarehouses: Warehouse[] = [
-  {
-    id: '1',
-    project_id: '1',
-    name: 'مخزن القويعية الرئيسي',
-    location: 'حي النخيل، القويعية',
-    manager: 'أحمد العتيبي',
-    items: [
-      { id: '1', warehouse_id: '1', name: 'لمبات LED', category: 'كهرباء', quantity: 150, min_quantity: 50, unit: 'قطعة', unit_price: 15, supplier: 'شركة النور', created_at: '2026-01-01' },
-      { id: '2', warehouse_id: '1', name: 'شريط لاصق كهربائي', category: 'كهرباء', quantity: 30, min_quantity: 20, unit: 'رول', unit_price: 5, supplier: 'شركة النور', created_at: '2026-01-01' },
-    ],
-    created_at: '2026-01-01',
-  },
-];
+import PageHeader from "@/components/layout/PageHeader";
+import Card from "@/components/layout/Card";
+import StatCard from "@/components/layout/StatCard";
+import { Package, ArrowDown, ArrowUp, AlertTriangle, Plus, Download, Upload } from "lucide-react";
+import Link from "next/link";
 
 export default function InventoryPage() {
-  const [warehouses] = useState<Warehouse[]>(mockWarehouses);
-  const [selectedWarehouse, setSelectedWarehouse] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const allItems = warehouses.flatMap((w) => w.items);
-  const filteredItems = allItems.filter((item) => {
-    const matchesSearch = item.name.includes(searchTerm) || item.category.includes(searchTerm);
-    const matchesWarehouse = selectedWarehouse === 'all' || item.warehouse_id === selectedWarehouse;
-    return matchesSearch && matchesWarehouse;
-  });
-
-  const lowStock = allItems.filter((item) => item.quantity <= item.min_quantity);
+  const items = [
+    { name: "فلاتر مكيفات", category: "تكييف", qty: 45, min: 10, unit: "قطعة" },
+    { name: "لمبات LED", category: "كهرباء", qty: 8, min: 20, unit: "علبة" },
+    { name: "منظفات عامة", category: "تنظيف", qty: 120, min: 30, unit: "لتر" },
+    { name: "مواسير PVC", category: "سباكة", qty: 25, min: 15, unit: "متر" },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">المخازن</h1>
-          <p className="text-gray-500 mt-1">إدارة المخزون والمواد</p>
-        </div>
-        <button className="inline-flex items-center gap-2 bg-ayla-600 text-white px-4 py-2 rounded-lg hover:bg-ayla-700">
-          <Plus className="w-4 h-4" />
-          صنف جديد
-        </button>
-      </div>
-
-      {lowStock.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-red-800">
-            <AlertTriangle className="w-5 h-5" />
-            <span className="font-medium">تنبيه: {lowStock.length} صنف تحت الحد الأدنى</span>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">المخازن</p>
-          <p className="text-2xl font-bold text-gray-900">{warehouses.length}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">الأصناف</p>
-          <p className="text-2xl font-bold text-gray-900">{allItems.length}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">قيمة المخزون</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {new Intl.NumberFormat('ar-SA').format(allItems.reduce((s, i) => s + i.quantity * i.unit_price, 0))} ر.س
-          </p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">تحت الحد</p>
-          <p className="text-2xl font-bold text-red-600">{lowStock.length}</p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="بحث باسم الصنف..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pr-10 pl-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ayla-500"
-            />
-          </div>
-          <select
-            value={selectedWarehouse}
-            onChange={(e) => setSelectedWarehouse(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ayla-500"
+    <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <div className="flex items-center justify-between mb-8">
+        <PageHeader title="المخازن" subtitle="إدارة المخزون والمواد" />
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Upload className="w-4 h-4" />
+            استيراد
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Download className="w-4 h-4" />
+            تصدير
+          </button>
+          <Link
+            href="/inventory/new"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#1A0F09] font-medium text-sm"
+            style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}
           >
-            <option value="all">جميع المخازن</option>
-            {warehouses.map((w) => (
-              <option key={w.id} value={w.id}>{w.name}</option>
-            ))}
-          </select>
+            <Plus className="w-4 h-4" />
+            صنف جديد
+          </Link>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard title="إجمالي الأصناف" value="156" icon={Package} delay={0} />
+        <StatCard title="وارد اليوم" value="12" icon={ArrowDown} delay={0.1} />
+        <StatCard title="صادر اليوم" value="8" icon={ArrowUp} delay={0.2} />
+        <StatCard title="نفاد الكمية" value="3" icon={AlertTriangle} delay={0.3} />
+      </div>
+
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>جرد المخزون</h2>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">الصنف</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">التصنيف</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">الكمية</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">الحد الأدنى</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">السعر</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">المورد</th>
+            <thead>
+              <tr className="border-b border-[#C9A227]/20">
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">الصنف</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">التصنيف</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">الكمية</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">الحد الأدنى</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">الحالة</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-ayla-100 rounded-lg flex items-center justify-center">
-                        <Package className="w-5 h-5 text-ayla-600" />
-                      </div>
-                      <span className="font-medium text-gray-900">{item.name}</span>
-                    </div>
+            <tbody>
+              {items.map((item, i) => (
+                <tr key={i} className="border-b border-[#C9A227]/10 hover:bg-[#C9A227]/5 transition-colors">
+                  <td className="py-4 px-4">
+                    <div className="font-medium text-[#2C1810]">{item.name}</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.category}</td>
-                  <td className="px-6 py-4">
-                    <span className={cn(
-                      'px-3 py-1 rounded-full text-sm font-medium',
-                      item.quantity <= item.min_quantity ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                    )}>
-                      {item.quantity} {item.unit}
+                  <td className="py-4 px-4 text-[#5C3A2A]">{item.category}</td>
+                  <td className="py-4 px-4 text-[#2C1810] font-bold">{item.qty} {item.unit}</td>
+                  <td className="py-4 px-4 text-[#5C3A2A]">{item.min} {item.unit}</td>
+                  <td className="py-4 px-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      item.qty <= item.min ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+                    }`}>
+                      {item.qty <= item.min ? "نفاد" : "متوفر"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.min_quantity} {item.unit}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.unit_price} ر.س</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.supplier}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

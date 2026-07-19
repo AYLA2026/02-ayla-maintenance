@@ -1,151 +1,83 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import {
-  Truck,
-  Plus,
-  Search,
-  Calendar,
-  Gauge,
-  AlertTriangle,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Vehicle } from '@/types';
-
-const mockVehicles: Vehicle[] = [
-  {
-    id: '1',
-    project_id: '1',
-    plate_number: 'أ ب ج 1234',
-    type: 'بيك أب',
-    brand: 'تويوتا',
-    model: 'هايلوكس',
-    year: 2023,
-    insurance_expiry: '2026-12-15',
-    registration_expiry: '2026-11-20',
-    oil_change_date: '2026-06-01',
-    oil_change_km: 5000,
-    current_km: 12500,
-    status: 'active',
-    assigned_driver: 'أحمد العتيبي',
-    equipment: ['أدوات كهرباء', 'سلالم'],
-    created_at: '2025-01-01',
-  },
-  {
-    id: '2',
-    project_id: '1',
-    plate_number: 'د هـ و 5678',
-    type: 'فان',
-    brand: 'مرسيدس',
-    model: 'سبرينتر',
-    year: 2022,
-    insurance_expiry: '2026-10-10',
-    registration_expiry: '2026-09-15',
-    oil_change_date: '2026-05-15',
-    oil_change_km: 8000,
-    current_km: 45000,
-    status: 'maintenance',
-    assigned_driver: 'خالد السالم',
-    equipment: ['أدوات سباكة', 'مواد نظافة'],
-    created_at: '2025-01-01',
-  },
-];
+import PageHeader from "@/components/layout/PageHeader";
+import Card from "@/components/layout/Card";
+import StatCard from "@/components/layout/StatCard";
+import { Truck, Fuel, Wrench, AlertTriangle, Plus, Download, Upload } from "lucide-react";
+import Link from "next/link";
 
 export default function VehiclesPage() {
-  const [vehicles] = useState<Vehicle[]>(mockVehicles);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredVehicles = vehicles.filter((v) =>
-    v.plate_number.includes(searchTerm) || v.brand.includes(searchTerm)
-  );
-
-  const today = new Date();
-  const expiringSoon = vehicles.filter((v) => {
-    const insurance = new Date(v.insurance_expiry);
-    const reg = new Date(v.registration_expiry);
-    const diff1 = (insurance.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-    const diff2 = (reg.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-    return diff1 <= 60 || diff2 <= 60;
-  });
+  const vehicles = [
+    { plate: "أ ب ج 1234", type: "بيك أب", driver: "أحمد محمد", status: "متاح", fuel: 85, lastMaint: "2026/06/15" },
+    { plate: "أ ب ج 5678", type: "فان", driver: "خالد عبدالله", status: "مشغول", fuel: 45, lastMaint: "2026/07/01" },
+    { plate: "أ ب ج 9012", type: "سطحه", driver: "سعد إبراهيم", status: "صيانة", fuel: 20, lastMaint: "2026/05/20" },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">المركبات</h1>
-          <p className="text-gray-500 mt-1">إدارة المركبات والمعدات</p>
-        </div>
-        <button className="inline-flex items-center gap-2 bg-ayla-600 text-white px-4 py-2 rounded-lg hover:bg-ayla-700">
-          <Plus className="w-4 h-4" />
-          مركبة جديدة
-        </button>
-      </div>
-
-      {expiringSoon.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-yellow-800">
-            <AlertTriangle className="w-5 h-5" />
-            <span className="font-medium">تنبيه: {expiringSoon.length} مركبة تنتهي وثائقها قريباً</span>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="بحث برقم اللوحة أو الماركة..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pr-10 pl-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ayla-500"
-          />
+    <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <div className="flex items-center justify-between mb-8">
+        <PageHeader title="المركبات" subtitle="تتبع المركبات والصيانة" />
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Upload className="w-4 h-4" />
+            استيراد
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Download className="w-4 h-4" />
+            تصدير
+          </button>
+          <Link
+            href="/vehicles/new"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#1A0F09] font-medium text-sm"
+            style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}
+          >
+            <Plus className="w-4 h-4" />
+            مركبة جديدة
+          </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredVehicles.map((vehicle) => (
-          <div key={vehicle.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard title="إجمالي المركبات" value="8" icon={Truck} delay={0} />
+        <StatCard title="المتاحة" value="5" icon={Fuel} delay={0.1} />
+        <StatCard title="قيد الصيانة" value="2" icon={Wrench} delay={0.2} />
+        <StatCard title="تحتاج صيانة" value="1" icon={AlertTriangle} delay={0.3} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {vehicles.map((vehicle, i) => (
+          <Card key={i} delay={i * 0.1}>
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-ayla-100 rounded-lg flex items-center justify-center">
-                  <Truck className="w-6 h-6 text-ayla-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{vehicle.plate_number}</h3>
-                  <p className="text-sm text-gray-500">{vehicle.brand} {vehicle.model} ({vehicle.year})</p>
-                </div>
+              <div>
+                <h3 className="font-bold text-[#2C1810] text-lg" style={{ fontFamily: "Tajawal, sans-serif" }}>{vehicle.plate}</h3>
+                <p className="text-sm text-[#5C3A2A]">{vehicle.type}</p>
               </div>
-              <span className={cn(
-                'px-3 py-1 rounded-full text-sm font-medium',
-                vehicle.status === 'active' ? 'bg-green-100 text-green-800' :
-                vehicle.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              )}>
-                {vehicle.status === 'active' ? 'نشط' :
-                 vehicle.status === 'maintenance' ? 'صيانة' : 'غير نشط'}
-              </span>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                vehicle.status === "متاح" ? "bg-green-100 text-green-800" :
+                vehicle.status === "مشغول" ? "bg-amber-100 text-amber-800" :
+                "bg-red-100 text-red-800"
+              }`}>{vehicle.status}</span>
             </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <span>تأمين: {vehicle.insurance_expiry}</span>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[#5C3A2A]">السائق:</span>
+                <span className="text-[#2C1810] font-medium">{vehicle.driver}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <span>استمارة: {vehicle.registration_expiry}</span>
+              <div className="flex justify-between">
+                <span className="text-[#5C3A2A]">الوقود:</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 h-2 rounded-full bg-[#C9A227]/10 overflow-hidden">
+                    <div className="h-full rounded-full bg-[#C9A227]" style={{ width: `${vehicle.fuel}%` }} />
+                  </div>
+                  <span className="text-[#2C1810] font-medium">{vehicle.fuel}%</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Gauge className="w-4 h-4 text-gray-400" />
-                <span>{vehicle.current_km.toLocaleString('ar-SA')} كم</span>
+              <div className="flex justify-between">
+                <span className="text-[#5C3A2A]">آخر صيانة:</span>
+                <span className="text-[#2C1810] font-medium">{vehicle.lastMaint}</span>
               </div>
             </div>
-
-            {vehicle.assigned_driver && (
-              <p className="text-sm text-gray-500">السائق: {vehicle.assigned_driver}</p>
-            )}
-          </div>
+          </Card>
         ))}
       </div>
     </div>

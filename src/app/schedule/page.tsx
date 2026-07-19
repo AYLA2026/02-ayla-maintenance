@@ -1,138 +1,103 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import {
-  CalendarDays,
-  Plus,
-  Clock,
-  Users,
-  Truck,
-  ChevronRight,
-  ChevronLeft,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { MaintenanceSchedule } from '@/types';
-
-const mockSchedules: MaintenanceSchedule[] = [
-  {
-    id: '1',
-    project_id: '1',
-    school_id: '1',
-    school_name: 'مدرسة الرياض الابتدائية',
-    type: 'صيانة دورية كهرباء',
-    frequency: 'monthly',
-    last_date: '2026-06-15',
-    next_date: '2026-07-15',
-    assigned_team: ['فني كهرباء 1', 'فني كهرباء 2'],
-    assigned_vehicles: ['سيارة 1'],
-    status: 'scheduled',
-    created_at: '2026-01-01',
-  },
-  {
-    id: '2',
-    project_id: '1',
-    school_id: '2',
-    school_name: 'مدرسة النور المتوسطة',
-    type: 'تنظيف شامل',
-    frequency: 'weekly',
-    last_date: '2026-07-08',
-    next_date: '2026-07-15',
-    assigned_team: ['عامل نظافة 1', 'عامل نظافة 2'],
-    assigned_vehicles: ['سيارة 2'],
-    status: 'in_progress',
-    created_at: '2026-01-01',
-  },
-];
-
-const frequencyLabels: Record<string, string> = {
-  daily: 'يومي', weekly: 'أسبوعي', monthly: 'شهري', quarterly: 'ربع سنوي', yearly: 'سنوي',
-};
+import PageHeader from "@/components/layout/PageHeader";
+import Card from "@/components/layout/Card";
+import StatCard from "@/components/layout/StatCard";
+import { Calendar, Clock, CheckCircle, AlertCircle, Plus, Download, Upload, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 export default function SchedulePage() {
-  const [schedules] = useState<MaintenanceSchedule[]>(mockSchedules);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentWeek, setCurrentWeek] = useState("15 - 21 يوليو 2026");
+
+  const schedule = [
+    { day: "الأحد", date: "15 يوليو", tasks: [
+      { time: "08:00", title: "صيانة مكيفات", location: "مدرسة النور", team: "أحمد محمد", status: "مكتمل" },
+      { time: "10:30", title: "تنظيف مباني", location: "مدرسة الفجر", team: "خالد عبدالله", status: "جاري" },
+    ]},
+    { day: "الاثنين", date: "16 يوليو", tasks: [
+      { time: "09:00", title: "فحص كهرباء", location: "مدرسة الروضة", team: "سعد إبراهيم", status: "قادم" },
+    ]},
+    { day: "الثلاثاء", date: "17 يوليو", tasks: [
+      { time: "08:00", title: "صيانة عامة", location: "مدرسة الأمل", team: "ناصر علي", status: "قادم" },
+      { time: "13:00", title: "تنظيف حمامات", location: "مدرسة النور", team: "فريق التنظيف", status: "قادم" },
+    ]},
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">التخطيط الدوري</h1>
-          <p className="text-gray-500 mt-1">جدولة مهام الصيانة الدورية</p>
+    <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <div className="flex items-center justify-between mb-8">
+        <PageHeader title="الجدولة" subtitle="جدولة المهام والفريق" />
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Upload className="w-4 h-4" />
+            استيراد
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Download className="w-4 h-4" />
+            تصدير
+          </button>
+          <Link
+            href="/schedule/new"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#1A0F09] font-medium text-sm"
+            style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}
+          >
+            <Plus className="w-4 h-4" />
+            مهمة جديدة
+          </Link>
         </div>
-        <button className="inline-flex items-center gap-2 bg-ayla-600 text-white px-4 py-2 rounded-lg hover:bg-ayla-700">
-          <Plus className="w-4 h-4" />
-          مهمة جديدة
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard title="مهام الأسبوع" value="24" icon={Calendar} delay={0} />
+        <StatCard title="مكتملة" value="18" icon={CheckCircle} delay={0.1} />
+        <StatCard title="جارية" value="4" icon={Clock} delay={0.2} />
+        <StatCard title="متأخرة" value="2" icon={AlertCircle} delay={0.3} />
+      </div>
+
+      {/* التنقل بين الأسابيع */}
+      <div className="flex items-center justify-between mb-6">
+        <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-[#5C3A2A] hover:bg-[#C9A227]/10 transition-colors">
+          <ChevronRight className="w-4 h-4" />
+          الأسبوع السابق
+        </button>
+        <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>{currentWeek}</h2>
+        <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-[#5C3A2A] hover:bg-[#C9A227]/10 transition-colors">
+          الأسبوع التالي
+          <ChevronLeft className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-          <h2 className="text-lg font-semibold">
-            {currentMonth.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' })}
-          </h2>
-          <button
-            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
+      {/* الجدول */}
       <div className="space-y-4">
-        {schedules.map((schedule) => (
-          <div key={schedule.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-semibold text-gray-900">{schedule.type}</h3>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                    {frequencyLabels[schedule.frequency]}
-                  </span>
-                  <span className={cn(
-                    'px-2 py-1 rounded-full text-xs font-medium',
-                    schedule.status === 'scheduled' ? 'bg-green-100 text-green-800' :
-                    schedule.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                    schedule.status === 'completed' ? 'bg-gray-100 text-gray-800' :
-                    'bg-red-100 text-red-800'
-                  )}>
-                    {schedule.status === 'scheduled' ? 'مجدول' :
-                     schedule.status === 'in_progress' ? 'قيد التنفيذ' :
-                     schedule.status === 'completed' ? 'مكتمل' : 'متأخر'}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mb-2">{schedule.school_name}</p>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    التالي: {schedule.next_date}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    {schedule.assigned_team.length} فني
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Truck className="w-4 h-4" />
-                    {schedule.assigned_vehicles.length} مركبة
-                  </span>
-                </div>
+        {schedule.map((day, i) => (
+          <Card key={i} delay={i * 0.1}>
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#C9A227]/10">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#C9A227]/10">
+                <Calendar className="w-5 h-5 text-[#C9A227]" />
               </div>
-              <div className="flex gap-2">
-                <button className="px-3 py-2 text-sm text-ayla-600 bg-ayla-50 rounded-lg hover:bg-ayla-100">
-                  تفاصيل
-                </button>
-                <button className="px-3 py-2 text-sm text-green-600 bg-green-50 rounded-lg hover:bg-green-100">
-                  إتمام
-                </button>
+              <div>
+                <h3 className="font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>{day.day}</h3>
+                <p className="text-xs text-[#5C3A2A]">{day.date}</p>
               </div>
             </div>
-          </div>
+            <div className="space-y-3">
+              {day.tasks.map((task, j) => (
+                <div key={j} className="flex items-center gap-4 p-3 rounded-lg bg-[#C9A227]/5">
+                  <div className="text-sm font-bold text-[#C9A227] w-16">{task.time}</div>
+                  <div className="flex-1">
+                    <div className="font-medium text-[#2C1810] text-sm">{task.title}</div>
+                    <div className="text-xs text-[#5C3A2A]">{task.location} • {task.team}</div>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    task.status === "مكتمل" ? "bg-green-100 text-green-800" :
+                    task.status === "جاري" ? "bg-amber-100 text-amber-800" :
+                    "bg-blue-100 text-blue-800"
+                  }`}>{task.status}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
         ))}
       </div>
     </div>

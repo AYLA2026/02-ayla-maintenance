@@ -3,7 +3,8 @@
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";
-import { Building2, MapPin, Users, Wrench } from "lucide-react";
+import { Building2, MapPin, Users, Wrench, Download, Upload, Plus } from "lucide-react";
+import Link from "next/link";
 
 export default function SchoolsPage() {
   const schools = [
@@ -15,10 +16,27 @@ export default function SchoolsPage() {
 
   return (
     <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
-      <PageHeader 
-        title="المدارس" 
-        subtitle="إدارة المدارس والمواقع" 
-      />
+      <div className="flex items-center justify-between mb-8">
+        <PageHeader title="المدارس" subtitle="إدارة المدارس والمواقع" />
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Upload className="w-4 h-4" />
+            استيراد
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Download className="w-4 h-4" />
+            تصدير
+          </button>
+          <Link
+            href="/schools/new"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#1A0F09] font-medium text-sm"
+            style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}
+          >
+            <Plus className="w-4 h-4" />
+            مدرسة جديدة
+          </Link>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard title="إجمالي المدارس" value="12" icon={Building2} delay={0} />

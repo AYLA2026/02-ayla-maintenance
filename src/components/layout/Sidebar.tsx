@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Wrench,
@@ -14,10 +15,10 @@ import {
   LogOut,
   Menu,
   X,
-  Package,      // ← المخازن
-  Truck,        // ← المركبات
-  DollarSign,   // ← المالية
-  Calendar,     // ← الجدولة
+  Package,
+  Truck,
+  DollarSign,
+  Calendar,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -26,10 +27,10 @@ const menuItems = [
   { href: "/projects", label: "المشاريع", icon: Wrench },
   { href: "/schools", label: "المدارس", icon: Building2 },
   { href: "/workforce", label: "الفريق", icon: Users },
-  { href: "/inventory", label: "المخازن", icon: Package },           // ← جديد
-  { href: "/vehicles", label: "المركبات", icon: Truck },              // ← جديد
-  { href: "/finance", label: "المالية", icon: DollarSign },            // ← جديد
-  { href: "/schedule", label: "الجدولة", icon: Calendar },              // ← جديد
+  { href: "/inventory", label: "المخازن", icon: Package },
+  { href: "/vehicles", label: "المركبات", icon: Truck },
+  { href: "/finance", label: "المالية", icon: DollarSign },
+  { href: "/schedule", label: "الجدولة", icon: Calendar },
   { href: "/reports", label: "التقارير", icon: ClipboardList },
   { href: "/complaints", label: "البلاغات", icon: MessageSquare },
   { href: "/settings", label: "الإعدادات", icon: Settings },
@@ -162,9 +163,10 @@ export default function Sidebar() {
             }}
           />
 
-          {/* تسجيل الخروج */}
+          {/* تسجيل الخروج - مُصلح */}
           <button
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400/80 hover:text-red-400 transition-all duration-300 group w-full"
+            onClick={() => signOut({ callbackUrl: "/auth/login" })}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400/80 hover:text-red-400 transition-all duration-300 group w-full cursor-pointer"
             style={{ border: "1px solid rgba(239, 68, 68, 0.1)" }}
           >
             <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-red-500/10 group-hover:bg-red-500/20 transition-colors">

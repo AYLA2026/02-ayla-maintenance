@@ -1,0 +1,259 @@
+"use client";
+
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ArrowLeft,
+  Shield,
+  Wrench,
+  Building2,
+  Sparkles,
+  AlertCircle,
+} from "lucide-react";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("بيانات الدخول غير صحيحة");
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch {
+      setError("حدث خطأ غير متوقع");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, #2C1810 0%, #3D2417 30%, #2C1810 60%, #1A0F09 100%)",
+      }}
+    >
+      {/* خلفية متحركة */}
+      <div className="absolute inset-0 pointer-events-none">
+        <motion.div
+          className="absolute w-[600px] h-[600px] rounded-full opacity-20"
+          style={{
+            background: "radial-gradient(circle, rgba(201,162,39,0.4) 0%, transparent 70%)",
+            top: "-10%",
+            right: "-10%",
+          }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
+      {/* بطاقة تسجيل الدخول */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="relative z-10 w-full max-w-md mx-4"
+      >
+        <div
+          className="relative p-[2px] rounded-2xl"
+          style={{
+            background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 25%, #C9A227 50%, #B87333 75%, #C9A227 100%)",
+          }}
+        >
+          <div
+            className="relative rounded-2xl overflow-hidden p-8"
+            style={{
+              background: "linear-gradient(145deg, #3D2417 0%, #2C1810 50%, #1A0F09 100%)",
+            }}
+          >
+            {/* الشعار */}
+            <div className="text-center mb-8">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3, type: "spring" }}
+                className="flex justify-center mb-4"
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#C9A227] via-[#E8D5A3] to-[#C9A227] p-[3px]">
+                    <div className="w-full h-full rounded-full bg-[#1A0F09]" />
+                  </div>
+                  <div className="relative z-10 flex items-center justify-center w-20 h-20">
+                    <Sparkles className="w-10 h-10 text-[#C9A227]" strokeWidth={1.5} />
+                  </div>
+                </div>
+              </motion.div>
+
+              <h1
+                className="text-2xl font-bold mb-2"
+                style={{
+                  background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 50%, #C9A227 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontFamily: "Tajawal, sans-serif",
+                }}
+              >
+                آيلا للصيانة
+              </h1>
+              <p className="text-[#E8D5A3] text-sm">نظام إدارة الصيانة الذكي المتكامل</p>
+            </div>
+
+            {/* خطأ */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-4"
+                >
+                  <div className="flex items-center gap-2 p-3 rounded-lg border border-red-800/50 bg-red-950/30 text-red-300 text-sm">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* النموذج */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* البريد */}
+              <div>
+                <label className="block text-[#E8D5A3] text-sm mb-2 font-medium">البريد الإلكتروني</label>
+                <div className="relative">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Mail className="w-4 h-4 text-[#C9A227]" />
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@ayla.com"
+                    required
+                    className="w-full pr-10 pl-4 py-3 rounded-lg text-[#F5E6D3] placeholder-[#5C3A2A] outline-none"
+                    style={{
+                      background: "rgba(26, 15, 9, 0.8)",
+                      border: "1px solid rgba(201, 162, 39, 0.2)",
+                      fontFamily: "Tajawal, sans-serif",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* كلمة المرور */}
+              <div>
+                <label className="block text-[#E8D5A3] text-sm mb-2 font-medium">كلمة المرور</label>
+                <div className="relative">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Lock className="w-4 h-4 text-[#C9A227]" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="w-full pr-10 pl-12 py-3 rounded-lg text-[#F5E6D3] placeholder-[#5C3A2A] outline-none"
+                    style={{
+                      background: "rgba(26, 15, 9, 0.8)",
+                      border: "1px solid rgba(201, 162, 39, 0.2)",
+                      fontFamily: "Tajawal, sans-serif",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4 text-[#C9A227]/60" />
+                    ) : (
+                      <Eye className="w-4 h-4 text-[#C9A227]/60" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* تذكرني */}
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 text-[#E8D5A3]/80">
+                  <input type="checkbox" className="rounded border-[#C9A227]/30" />
+                  تذكرني
+                </label>
+                <a href="#" className="text-[#C9A227]/70 hover:text-[#C9A227]">نسيت كلمة المرور؟</a>
+              </div>
+
+              {/* الزر */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-lg font-bold text-[#1A0F09] relative overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 50%, #C9A227 100%)",
+                  fontFamily: "Tajawal, sans-serif",
+                }}
+              >
+                {loading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                    className="w-5 h-5 border-2 border-[#1A0F09] border-t-transparent rounded-full mx-auto"
+                  />
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    تسجيل الدخول
+                    <ArrowLeft className="w-4 h-4" />
+                  </span>
+                )}
+              </button>
+            </form>
+
+            {/* المميزات */}
+            <div className="mt-8 pt-6 grid grid-cols-3 gap-3" style={{ borderTop: "1px solid rgba(201, 162, 39, 0.15)" }}>
+              {[
+                { icon: Shield, label: "أمان عالي" },
+                { icon: Wrench, label: "صيانة ذكية" },
+                { icon: Building2, label: "إدارة المدارس" },
+              ].map((item, i) => (
+                <div key={i} className="flex flex-col items-center gap-2 p-3 rounded-lg" style={{ background: "rgba(201, 162, 39, 0.05)", border: "1px solid rgba(201, 162, 39, 0.1)" }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(201, 162, 39, 0.15)" }}>
+                    <item.icon className="w-4 h-4 text-[#C9A227]" />
+                  </div>
+                  <span className="text-[11px] text-[#E8D5A3]/80">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <p className="text-center mt-6 text-[#C9A227]/50 text-xs">
+          نظام آيلا للصيانة © 2026 | Ayla Digital Solutions
+        </p>
+      </motion.div>
+    </div>
+  );
+}

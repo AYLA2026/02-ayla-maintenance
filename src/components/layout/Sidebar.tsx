@@ -14,6 +14,10 @@ import {
   LogOut,
   Menu,
   X,
+  Package,      // ← المخازن
+  Truck,        // ← المركبات
+  DollarSign,   // ← المالية
+  Calendar,     // ← الجدولة
 } from "lucide-react";
 import { useState } from "react";
 
@@ -22,6 +26,10 @@ const menuItems = [
   { href: "/projects", label: "المشاريع", icon: Wrench },
   { href: "/schools", label: "المدارس", icon: Building2 },
   { href: "/workforce", label: "الفريق", icon: Users },
+  { href: "/inventory", label: "المخازن", icon: Package },           // ← جديد
+  { href: "/vehicles", label: "المركبات", icon: Truck },              // ← جديد
+  { href: "/finance", label: "المالية", icon: DollarSign },            // ← جديد
+  { href: "/schedule", label: "الجدولة", icon: Calendar },              // ← جديد
   { href: "/reports", label: "التقارير", icon: ClipboardList },
   { href: "/complaints", label: "البلاغات", icon: MessageSquare },
   { href: "/settings", label: "الإعدادات", icon: Settings },
@@ -104,8 +112,8 @@ export default function Sidebar() {
           </div>
 
           {/* القائمة */}
-          <nav className="flex-1 space-y-1">
-            {menuItems.map((item, index) => {
+          <nav className="flex-1 space-y-1 overflow-y-auto">
+            {menuItems.map((item) => {
               const active = isActive(item.href);
               return (
                 <Link

@@ -35,16 +35,18 @@ export default function LoginPage() {
         email,
         password,
         redirect: false,
+        callbackUrl: "/",
       });
 
       if (result?.error) {
         setError("بيانات الدخول غير صحيحة");
-      } else {
-        router.push("/dashboard");
+      } else if (result?.ok) {
+        router.push("/");
         router.refresh();
       }
-    } catch {
+    } catch (err) {
       setError("حدث خطأ غير متوقع");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -90,8 +92,16 @@ export default function LoginPage() {
               background: "linear-gradient(145deg, #3D2417 0%, #2C1810 50%, #1A0F09 100%)",
             }}
           >
+            {/* خط ذهبي علوي */}
+            <div
+              className="absolute top-0 left-0 right-0 h-1"
+              style={{
+                background: "linear-gradient(90deg, transparent 0%, #C9A227 20%, #E8D5A3 50%, #C9A227 80%, transparent 100%)",
+              }}
+            />
+
             {/* الشعار */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 pt-2">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -233,20 +243,41 @@ export default function LoginPage() {
             </form>
 
             {/* المميزات */}
-            <div className="mt-8 pt-6 grid grid-cols-3 gap-3" style={{ borderTop: "1px solid rgba(201, 162, 39, 0.15)" }}>
+            <div
+              className="mt-8 pt-6 grid grid-cols-3 gap-3"
+              style={{ borderTop: "1px solid rgba(201, 162, 39, 0.15)" }}
+            >
               {[
                 { icon: Shield, label: "أمان عالي" },
                 { icon: Wrench, label: "صيانة ذكية" },
                 { icon: Building2, label: "إدارة المدارس" },
               ].map((item, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 p-3 rounded-lg" style={{ background: "rgba(201, 162, 39, 0.05)", border: "1px solid rgba(201, 162, 39, 0.1)" }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(201, 162, 39, 0.15)" }}>
+                <div
+                  key={i}
+                  className="flex flex-col items-center gap-2 p-3 rounded-lg"
+                  style={{
+                    background: "rgba(201, 162, 39, 0.05)",
+                    border: "1px solid rgba(201, 162, 39, 0.1)",
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(201, 162, 39, 0.15)" }}
+                  >
                     <item.icon className="w-4 h-4 text-[#C9A227]" />
                   </div>
-                  <span className="text-[11px] text-[#E8D5A3]/80">{item.label}</span>
+                  <span className="text-[11px] text-[#E8D5A3]/80 text-center">{item.label}</span>
                 </div>
               ))}
             </div>
+
+            {/* خط ذهبي سفلي */}
+            <div
+              className="absolute bottom-0 left-0 right-0 h-1"
+              style={{
+                background: "linear-gradient(90deg, transparent 0%, #C9A227 20%, #E8D5A3 50%, #C9A227 80%, transparent 100%)",
+              }}
+            />
           </div>
         </div>
 

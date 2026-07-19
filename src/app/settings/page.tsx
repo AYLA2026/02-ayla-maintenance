@@ -1,3 +1,5 @@
+"use client";
+
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
 import { User, Bell, Shield, Palette, Globe } from "lucide-react";
@@ -37,7 +39,6 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {/* معلومات النظام */}
       <Card className="mt-8">
         <h2 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>
           معلومات النظام

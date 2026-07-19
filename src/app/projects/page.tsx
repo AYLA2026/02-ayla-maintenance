@@ -1,208 +1,94 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import {
-  FolderKanban,
-  Plus,
-  Search,
-  Building2,
-  Calendar,
-  DollarSign,
-  Edit,
-  Trash2,
-  Eye,
-  MapPin,
-  CheckCircle,
-  PauseCircle,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Project } from '@/types';
-
-const mockProjects: Project[] = [
-  {
-    id: '1',
-    name: 'مشروع صيانة مدارس القويعية',
-    description: 'صيانة دورية لـ 12 مدرسة حكومية في محافظة القويعية',
-    contract_value: 2500000,
-    start_date: '2026-01-01',
-    end_date: '2026-12-31',
-    status: 'active',
-    region: 'الرياض',
-    governorate: 'القويعية',
-    schools_count: 12,
-    created_at: '2026-01-01',
-    updated_at: '2026-01-01',
-  },
-  {
-    id: '2',
-    name: 'مشروع صيانة مدارس الدرعية',
-    description: 'صيانة دورية لـ 8 مدارس في محافظة الدرعية',
-    contract_value: 1800000,
-    start_date: '2026-03-01',
-    end_date: '2026-12-31',
-    status: 'active',
-    region: 'الرياض',
-    governorate: 'الدرعية',
-    schools_count: 8,
-    created_at: '2026-03-01',
-    updated_at: '2026-03-01',
-  },
-];
-
-function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; className: string }> = {
-    active: { label: 'نشط', className: 'bg-green-100 text-green-800' },
-    completed: { label: 'مكتمل', className: 'bg-blue-100 text-blue-800' },
-    suspended: { label: 'معلق', className: 'bg-yellow-100 text-yellow-800' },
-  };
-  const { label, className } = config[status] || config.active;
-  return (
-    <span className={cn('inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium', className)}>
-      {label}
-    </span>
-  );
-}
+import PageHeader from "@/components/layout/PageHeader";
+import Card from "@/components/layout/Card";
+import StatCard from "@/components/layout/StatCard";
+import { Wrench, Clock, CheckCircle, AlertTriangle, Plus } from "lucide-react";
+import Link from "next/link";
 
 export default function ProjectsPage() {
-  const [projects] = useState<Project[]>(mockProjects);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.governorate.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const totalValue = projects.reduce((sum, p) => sum + p.contract_value, 0);
-  const activeCount = projects.filter((p) => p.status === 'active').length;
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">المشاريع</h1>
-          <p className="text-gray-500 mt-1">إدارة مشاريع الصيانة</p>
-        </div>
-        <button className="inline-flex items-center gap-2 bg-ayla-600 text-white px-4 py-2 rounded-lg hover:bg-ayla-700 transition-colors">
-          <Plus className="w-5 h-5" />
+    <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <div className="flex items-center justify-between mb-8">
+        <PageHeader 
+          title="المشاريع" 
+          subtitle="إدارة مشاريع الصيانة والمتابعة" 
+        />
+        <Link
+          href="/projects/new"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#1A0F09] font-medium text-sm"
+          style={{
+            background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)",
+            fontFamily: "Tajawal, sans-serif",
+          }}
+        >
+          <Plus className="w-4 h-4" />
           مشروع جديد
-        </button>
+        </Link>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard title="إجمالي المشاريع" value="24" icon={Wrench} delay={0} />
+        <StatCard title="المشاريع النشطة" value="18" icon={Clock} delay={0.1} />
+        <StatCard title="المكتملة" value="5" icon={CheckCircle} delay={0.2} />
+        <StatCard title="العاجلة" value="1" icon={AlertTriangle} delay={0.3} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">إجمالي المشاريع</p>
-              <p className="text-3xl font-bold text-gray-900">{projects.length}</p>
-            </div>
-            <div className="bg-ayla-100 p-3 rounded-lg">
-              <FolderKanban className="w-6 h-6 text-ayla-600" />
-            </div>
-          </div>
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>
+            قائمة المشاريع
+          </h2>
         </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">المشاريع النشطة</p>
-              <p className="text-3xl font-bold text-green-600">{activeCount}</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#C9A227]/20">
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>المشروع</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>المدرسة</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>الحالة</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>التاريخ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-[#C9A227]/10 hover:bg-[#C9A227]/5 transition-colors">
+                <td className="py-4 px-4">
+                  <div className="font-medium text-[#2C1810]">صيانة مكيفات المبنى A</div>
+                  <div className="text-xs text-[#5C3A2A]">#PRJ-001</div>
+                </td>
+                <td className="py-4 px-4 text-[#5C3A2A]">مدرسة النور</td>
+                <td className="py-4 px-4">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">نشط</span>
+                </td>
+                <td className="py-4 px-4 text-[#5C3A2A] text-sm">2026/07/20</td>
+              </tr>
+              <tr className="border-b border-[#C9A227]/10 hover:bg-[#C9A227]/5 transition-colors">
+                <td className="py-4 px-4">
+                  <div className="font-medium text-[#2C1810]">تنظيف المباني</div>
+                  <div className="text-xs text-[#5C3A2A]">#PRJ-002</div>
+                </td>
+                <td className="py-4 px-4 text-[#5C3A2A]">مدرسة الفجر</td>
+                <td className="py-4 px-4">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">مكتمل</span>
+                </td>
+                <td className="py-4 px-4 text-[#5C3A2A] text-sm">2026/07/15</td>
+              </tr>
+              <tr className="hover:bg-[#C9A227]/5 transition-colors">
+                <td className="py-4 px-4">
+                  <div className="font-medium text-[#2C1810]">إصلاح كهرباء</div>
+                  <div className="text-xs text-[#5C3A2A]">#PRJ-003</div>
+                </td>
+                <td className="py-4 px-4 text-[#5C3A2A]">مدرسة الروضة</td>
+                <td className="py-4 px-4">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">عاجل</span>
+                </td>
+                <td className="py-4 px-4 text-[#5C3A2A] text-sm">2026/07/20</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">إجمالي العقود</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {new Intl.NumberFormat('ar-SA').format(totalValue)} ر.س
-              </p>
-            </div>
-            <div className="bg-yellow-100 p-3 rounded-lg">
-              <DollarSign className="w-6 h-6 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="بحث باسم المشروع أو المحافظة..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pr-10 pl-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ayla-500"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ayla-500"
-          >
-            <option value="all">جميع الحالات</option>
-            <option value="active">نشط</option>
-            <option value="completed">مكتمل</option>
-            <option value="suspended">معلق</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredProjects.map((project) => (
-          <div key={project.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-ayla-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-ayla-600" />
-                </div>
-                <StatusBadge status={project.status} />
-              </div>
-
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{project.name}</h3>
-              <p className="text-sm text-gray-500 mb-4 line-clamp-2">{project.description}</p>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <span>{project.region} - {project.governorate}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Building2 className="w-4 h-4 text-gray-400" />
-                  <span>{project.schools_count} مدرسة</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span>{project.start_date} → {project.end_date}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <DollarSign className="w-4 h-4 text-gray-400" />
-                  <span>{new Intl.NumberFormat('ar-SA').format(project.contract_value)} ر.س</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 mt-6 pt-4 border-t border-gray-100">
-                <button className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm text-ayla-600 bg-ayla-50 rounded-lg hover:bg-ayla-100 transition-colors">
-                  <Eye className="w-4 h-4" />
-                  عرض
-                </button>
-                <button className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      </Card>
     </div>
   );
 }

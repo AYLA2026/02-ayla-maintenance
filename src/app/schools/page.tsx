@@ -1,3 +1,5 @@
+"use client";
+
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";

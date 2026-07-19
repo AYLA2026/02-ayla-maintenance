@@ -1,3 +1,5 @@
+"use client";
+
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";
@@ -7,7 +9,7 @@ export default function WorkforcePage() {
   const team = [
     { name: "أحمد محمد", role: "فني تكييف", status: "متاح", rating: 4.8, tasks: 12 },
     { name: "خالد عبدالله", role: "فني كهرباء", status: "مشغول", rating: 4.5, tasks: 8 },
-    { name: "سعد Ibrahim", role: "فني سباكة", status: "متاح", rating: 4.9, tasks: 15 },
+    { name: "سعد إبراهيم", role: "فني سباكة", status: "متاح", rating: 4.9, tasks: 15 },
     { name: "ناصر علي", role: "فني عام", status: "إجازة", rating: 4.2, tasks: 5 },
   ];
 

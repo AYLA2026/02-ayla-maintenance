@@ -11,6 +11,7 @@ import {
   Lock,
   Sparkles,
   AlertCircle,
+  Shield,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -22,13 +23,11 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ← إذا كان المستخدم مسجل دخوله، وجهه للرئيسية
   useEffect(() => {
     if (status === "authenticated" && session) {
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     }
-  }, [status, session, router]);
+  }, [status, session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,26 +42,20 @@ export default function LoginPage() {
         callbackUrl: "/",
       });
 
-      console.log("SignIn result:", result);
-
       if (result?.error) {
         setError("بيانات الدخول غير صحيحة");
       } else if (result?.ok) {
-        // ← انتظر قليلاً ثم وجهه
         setTimeout(() => {
-          router.push("/");
-          router.refresh();
+          window.location.href = "/";
         }, 500);
       }
-    } catch (err) {
-      console.error("SignIn error:", err);
+    } catch {
       setError("حدث خطأ غير متوقع");
     } finally {
       setLoading(false);
     }
   };
 
-  // ← إذا كان يتحقق من الجلسة، أظهر تحميل
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#2C1810" }}>
@@ -138,7 +131,7 @@ export default function LoginPage() {
               </motion.div>
 
               <h1
-                className="text-2xl font-bold mb-2"
+                className="text-2xl font-bold mb-1"
                 style={{
                   background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 50%, #C9A227 100%)",
                   WebkitBackgroundClip: "text",
@@ -146,9 +139,19 @@ export default function LoginPage() {
                   fontFamily: "Tajawal, sans-serif",
                 }}
               >
-                آيلا للصيانة
+                Ayla Maintenance
               </h1>
-              <p className="text-[#E8D5A3] text-sm">نظام إدارة الصيانة الذكي المتكامل</p>
+
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <Shield className="w-3.5 h-3.5 text-[#C9A227]" />
+                <p className="text-[#E8D5A3] text-sm" style={{ fontFamily: "Tajawal, sans-serif" }}>
+                  مسؤول النظام: م. محمد عبد الرحمن
+                </p>
+              </div>
+
+              <p className="text-[#E8D5A3]/60 text-xs mt-3">
+                نظام إدارة الصيانة الذكي المتكامل
+              </p>
             </div>
 
             <AnimatePresence>

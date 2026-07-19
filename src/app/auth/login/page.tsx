@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,11 +15,20 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // ← إذا كان المستخدم مسجل دخوله، وجهه للرئيسية
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      router.push("/");
+      router.refresh();
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,18 +43,37 @@ export default function LoginPage() {
         callbackUrl: "/",
       });
 
+      console.log("SignIn result:", result);
+
       if (result?.error) {
         setError("بيانات الدخول غير صحيحة");
       } else if (result?.ok) {
-        router.push("/");
-        router.refresh();
+        // ← انتظر قليلاً ثم وجهه
+        setTimeout(() => {
+          router.push("/");
+          router.refresh();
+        }, 500);
       }
-    } catch {
+    } catch (err) {
+      console.error("SignIn error:", err);
       setError("حدث خطأ غير متوقع");
     } finally {
       setLoading(false);
     }
   };
+
+  // ← إذا كان يتحقق من الجلسة، أظهر تحميل
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#2C1810" }}>
+        <motion.div
+          className="w-10 h-10 border-2 border-[#C9A227] border-t-transparent rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -54,7 +82,6 @@ export default function LoginPage() {
         background: "linear-gradient(135deg, #2C1810 0%, #3D2417 30%, #2C1810 60%, #1A0F09 100%)",
       }}
     >
-      {/* خلفية متحركة */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div
           className="absolute w-[600px] h-[600px] rounded-full opacity-20"
@@ -68,7 +95,6 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* بطاقة تسجيل الدخول */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -87,7 +113,6 @@ export default function LoginPage() {
               background: "linear-gradient(145deg, #3D2417 0%, #2C1810 50%, #1A0F09 100%)",
             }}
           >
-            {/* خط ذهبي علوي */}
             <div
               className="absolute top-0 left-0 right-0 h-1"
               style={{
@@ -95,7 +120,6 @@ export default function LoginPage() {
               }}
             />
 
-            {/* الشعار */}
             <div className="text-center mb-8 pt-2">
               <motion.div
                 initial={{ scale: 0 }}
@@ -127,7 +151,6 @@ export default function LoginPage() {
               <p className="text-[#E8D5A3] text-sm">نظام إدارة الصيانة الذكي المتكامل</p>
             </div>
 
-            {/* خطأ */}
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -144,9 +167,7 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
 
-            {/* النموذج */}
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* البريد */}
               <div>
                 <label className="block text-[#E8D5A3] text-sm mb-2 font-medium">البريد الإلكتروني</label>
                 <div className="relative">
@@ -169,7 +190,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* كلمة المرور */}
               <div>
                 <label className="block text-[#E8D5A3] text-sm mb-2 font-medium">كلمة المرور</label>
                 <div className="relative">
@@ -199,7 +219,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* زر الدخول */}
               <motion.button
                 type="submit"
                 disabled={loading}

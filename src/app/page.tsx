@@ -1,3 +1,5 @@
+"use client";
+
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";
@@ -29,66 +31,46 @@ export default function HomePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Card className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>
-              المشاريع النشطة
-            </h2>
-            <span className="text-xs text-[#C9A227] cursor-pointer hover:underline">عرض الكل</span>
-          </div>
+          <h2 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>
+            المشاريع النشطة
+          </h2>
           <div className="space-y-4">
-            {[
-              { name: "صيانة مكيفات المبنى A", school: "مدرسة النور", status: "نشط", progress: 75 },
-              { name: "تنظيف المباني", school: "مدرسة الفجر", status: "مكتمل", progress: 100 },
-              { name: "إصلاح كهرباء", school: "مدرسة الروضة", status: "عاجل", progress: 30 },
-            ].map((project, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-[#2C1810] text-sm">{project.name}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      project.status === "نشط" ? "bg-amber-100 text-amber-800" :
-                      project.status === "مكتمل" ? "bg-green-100 text-green-800" :
-                      "bg-red-100 text-red-800"
-                    }`}>{project.status}</span>
-                  </div>
-                  <div className="text-xs text-[#5C3A2A] mb-2">{project.school}</div>
-                  <div className="h-2 rounded-full bg-[#C9A227]/10 overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${project.progress}%`,
-                        background: "linear-gradient(90deg, #C9A227 0%, #E8D5A3 100%)"
-                      }}
-                    />
-                  </div>
-                </div>
+            <div className="p-3 rounded-lg bg-[#C9A227]/5">
+              <div className="flex justify-between mb-1">
+                <span className="font-medium text-[#2C1810] text-sm">صيانة مكيفات المبنى A</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">نشط</span>
               </div>
-            ))}
+              <div className="text-xs text-[#5C3A2A]">مدرسة النور</div>
+            </div>
+            <div className="p-3 rounded-lg bg-[#C9A227]/5">
+              <div className="flex justify-between mb-1">
+                <span className="font-medium text-[#2C1810] text-sm">تنظيف المباني</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">مكتمل</span>
+              </div>
+              <div className="text-xs text-[#5C3A2A]">مدرسة الفجر</div>
+            </div>
           </div>
         </Card>
 
         <Card>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>
-              البلاغات الأخيرة
-            </h2>
-            <MessageSquare className="w-5 h-5 text-[#C9A227]" />
-          </div>
-          <div className="space-y-4">
-            {[
-              { title: "عطل في المكيف", school: "مدرسة النور", time: "منذ ساعة" },
-              { title: "تسرب مياه", school: "مدرسة الفجر", time: "منذ 3 ساعات" },
-              { title: "إنارة خارجة", school: "مدرسة الروضة", time: "منذ يوم" },
-            ].map((complaint, i) => (
-              <div key={i} className="flex items-start gap-3 pb-3 border-b border-[#C9A227]/10 last:border-0">
-                <div className="w-2 h-2 rounded-full bg-[#C9A227] mt-2 shrink-0" />
-                <div>
-                  <div className="font-medium text-[#2C1810] text-sm">{complaint.title}</div>
-                  <div className="text-xs text-[#5C3A2A]">{complaint.school}</div>
-                  <div className="text-xs text-[#C9A227]/60 mt-1">{complaint.time}</div>
-                </div>
+          <h2 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>
+            البلاغات الأخيرة
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 pb-3 border-b border-[#C9A227]/10">
+              <div className="w-2 h-2 rounded-full bg-[#C9A227] mt-2 shrink-0" />
+              <div>
+                <div className="font-medium text-[#2C1810] text-sm">عطل في المكيف</div>
+                <div className="text-xs text-[#5C3A2A]">مدرسة النور</div>
               </div>
-            ))}
+            </div>
+            <div className="flex items-start gap-3 pb-3 border-b border-[#C9A227]/10">
+              <div className="w-2 h-2 rounded-full bg-[#C9A227] mt-2 shrink-0" />
+              <div>
+                <div className="font-medium text-[#2C1810] text-sm">تسرب مياه</div>
+                <div className="text-xs text-[#5C3A2A]">مدرسة الفجر</div>
+              </div>
+            </div>
           </div>
         </Card>
       </div>

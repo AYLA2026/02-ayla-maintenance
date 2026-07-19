@@ -1,109 +1,132 @@
-'use client';
-
-import {
-  School,
-  MessageSquare,
-  Users,
-  Truck,
+import PageHeader from "@/components/layout/PageHeader";
+import Card from "@/components/layout/Card";
+import StatCard from "@/components/layout/StatCard";
+import { 
+  Wrench, 
+  Building2, 
+  Users, 
+  ClipboardList, 
+  MessageSquare, 
   TrendingUp,
-  AlertTriangle,
-  CheckCircle,
   Clock,
-} from 'lucide-react';
+  CheckCircle,
+  AlertTriangle
+} from "lucide-react";
 
-const stats = [
-  { title: 'المدارس', value: 24, icon: School, color: 'bg-blue-500' },
-  { title: 'البلاغات النشطة', value: 12, icon: MessageSquare, color: 'bg-yellow-500' },
-  { title: 'الفريق', value: 45, icon: Users, color: 'bg-green-500' },
-  { title: 'المركبات', value: 8, icon: Truck, color: 'bg-purple-500' },
-];
-
-const recentComplaints = [
-  { id: '1', school: 'مدرسة الرياض الابتدائية', category: 'كهرباء', status: 'pending', time: 'منذ ساعة' },
-  { id: '2', school: 'مدرسة النور المتوسطة', category: 'سباكة', status: 'in_progress', time: 'منذ 3 ساعات' },
-  { id: '3', school: 'مدرسة الفجر الثانوية', category: 'تكييف', status: 'completed', time: 'منذ يوم' },
-];
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    in_progress: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-  };
-  const labels: Record<string, string> = {
-    pending: 'معلق',
-    in_progress: 'قيد التنفيذ',
-    completed: 'مكتمل',
-  };
+export default function HomePage() {
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-medium ${styles[status] || 'bg-gray-100'}`}>
-      {labels[status] || status}
-    </span>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">الرئيسية</h1>
-        <p className="text-gray-500 mt-1">نظرة عامة على نظام الصيانة</p>
+    <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <PageHeader 
+        title="لوحة التحكم" 
+        subtitle="نظرة عامة على النظام" 
+      />
+      
+      {/* الإحصائيات الرئيسية */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard title="إجمالي المشاريع" value="24" icon={Wrench} delay={0} />
+        <StatCard title="المدارس" value="12" icon={Building2} delay={0.1} />
+        <StatCard title="أعضاء الفريق" value="45" icon={Users} delay={0.2} />
+        <StatCard title="التقارير" value="156" icon={ClipboardList} delay={0.3} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div key={stat.title} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">{stat.title}</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
-              </div>
-              <div className={`${stat.color} p-3 rounded-lg`}>
-                <stat.icon className="w-6 h-6 text-white" />
-              </div>
-            </div>
+      {/* الصف الثاني */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* المشاريع النشطة */}
+        <Card className="lg:col-span-2">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>
+              المشاريع النشطة
+            </h2>
+            <span className="text-xs text-[#C9A227] cursor-pointer hover:underline">عرض الكل</span>
           </div>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">آخر البلاغات</h2>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {recentComplaints.map((complaint) => (
-            <div key={complaint.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-ayla-100 rounded-full flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-ayla-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{complaint.school}</p>
-                  <p className="text-sm text-gray-500">{complaint.category} · {complaint.time}</p>
+          <div className="space-y-4">
+            {[
+              { name: "صيانة مكيفات المبنى A", school: "مدرسة النور", status: "نشط", progress: 75 },
+              { name: "تنظيف المباني", school: "مدرسة الفجر", status: "مكتمل", progress: 100 },
+              { name: "إصلاح كهرباء", school: "مدرسة الروضة", status: "عاجل", progress: 30 },
+            ].map((project, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-[#2C1810] text-sm">{project.name}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      project.status === "نشط" ? "bg-amber-100 text-amber-800" :
+                      project.status === "مكتمل" ? "bg-green-100 text-green-800" :
+                      "bg-red-100 text-red-800"
+                    }`}>{project.status}</span>
+                  </div>
+                  <div className="text-xs text-[#5C3A2A] mb-2">{project.school}</div>
+                  <div className="h-2 rounded-full bg-[#C9A227]/10 overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${project.progress}%`,
+                        background: "linear-gradient(90deg, #C9A227 0%, #E8D5A3 100%)"
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-              <StatusBadge status={complaint.status} />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* البلاغات الأخيرة */}
+        <Card>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>
+              البلاغات الأخيرة
+            </h2>
+            <MessageSquare className="w-5 h-5 text-[#C9A227]" />
+          </div>
+          <div className="space-y-4">
+            {[
+              { title: "عطل في المكيف", school: "مدرسة النور", time: "منذ ساعة" },
+              { title: "تسرب مياه", school: "مدرسة الفجر", time: "منذ 3 ساعات" },
+              { title: "إنارة خارجة", school: "مدرسة الروضة", time: "منذ يوم" },
+            ].map((complaint, i) => (
+              <div key={i} className="flex items-start gap-3 pb-3 border-b border-[#C9A227]/10 last:border-0">
+                <div className="w-2 h-2 rounded-full bg-[#C9A227] mt-2 shrink-0" />
+                <div>
+                  <div className="font-medium text-[#2C1810] text-sm">{complaint.title}</div>
+                  <div className="text-xs text-[#5C3A2A]">{complaint.school}</div>
+                  <div className="text-xs text-[#C9A227]/60 mt-1">{complaint.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
 
+      {/* الإحصائيات السريعة */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-ayla-500 to-ayla-600 rounded-xl p-6 text-white">
-          <AlertTriangle className="w-8 h-8 mb-3" />
-          <h3 className="font-semibold text-lg">بلاغ جديد</h3>
-          <p className="text-ayla-100 text-sm mt-1">تسجيل بلاغ صيانة جديد</p>
-        </div>
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
-          <CheckCircle className="w-8 h-8 mb-3" />
-          <h3 className="font-semibold text-lg">تقرير يومي</h3>
-          <p className="text-green-100 text-sm mt-1">إنشاء تقرير النظافة اليومي</p>
-        </div>
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
-          <TrendingUp className="w-8 h-8 mb-3" />
-          <h3 className="font-semibold text-lg">التحليل المالي</h3>
-          <p className="text-purple-100 text-sm mt-1">عرض التقارير المالية</p>
-        </div>
+        <Card className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-100">
+            <CheckCircle className="w-6 h-6 text-green-600" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-[#2C1810]">85%</div>
+            <div className="text-xs text-[#5C3A2A]">نسبة الإنجاز</div>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-amber-100">
+            <Clock className="w-6 h-6 text-amber-600" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-[#2C1810]">12</div>
+            <div className="text-xs text-[#5C3A2A]">مهمة هذا الأسبوع</div>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-red-100">
+            <AlertTriangle className="w-6 h-6 text-red-600" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-[#2C1810]">3</div>
+            <div className="text-xs text-[#5C3A2A]">بلاغات عاجلة</div>
+          </div>
+        </Card>
       </div>
     </div>
   );

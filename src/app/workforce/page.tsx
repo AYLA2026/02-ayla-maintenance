@@ -1,168 +1,79 @@
-'use client';
-
-import { useState } from 'react';
-import {
-  Users,
-  Plus,
-  Search,
-  Phone,
-  Calendar,
-  AlertTriangle,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Employee } from '@/types';
-
-const mockEmployees: Employee[] = [
-  {
-    id: '1',
-    project_id: '1',
-    name: 'أحمد محمد العتيبي',
-    nationality: 'سعودي',
-    job_title: 'مشرف صيانة',
-    department: 'O&M',
-    id_number: '1087654321',
-    phone: '0501234567',
-    whatsapp_numbers: [{ number: '+966501234567', is_primary: true, label: 'رسمي' }],
-    residency_expiry: '2027-05-15',
-    license_expiry: '2026-12-20',
-    salary: 8500,
-    status: 'active',
-    documents: ['إقامة', 'رخصة قيادة'],
-    created_at: '2025-01-01',
-  },
-  {
-    id: '2',
-    project_id: '1',
-    name: 'خالد عبدالله السالم',
-    nationality: 'مصري',
-    job_title: 'فني كهرباء',
-    department: 'كهرباء',
-    id_number: '2456789012',
-    phone: '0559876543',
-    whatsapp_numbers: [{ number: '+966559876543', is_primary: true, label: 'رسمي' }],
-    residency_expiry: '2026-09-10',
-    salary: 4500,
-    status: 'active',
-    documents: ['إقامة', 'شهادة مهنية'],
-    created_at: '2025-03-01',
-  },
-];
+import PageHeader from "@/components/layout/PageHeader";
+import Card from "@/components/layout/Card";
+import StatCard from "@/components/layout/StatCard";
+import { Users, Wrench, Clock, Star } from "lucide-react";
 
 export default function WorkforcePage() {
-  const [employees] = useState<Employee[]>(mockEmployees);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredEmployees = employees.filter((e) =>
-    e.name.includes(searchTerm) || e.job_title.includes(searchTerm)
-  );
-
-  const today = new Date();
-  const expiringSoon = employees.filter((e) => {
-    const expiry = new Date(e.residency_expiry);
-    const diff = (expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-    return diff <= 90 && diff > 0;
-  });
+  const team = [
+    { name: "أحمد محمد", role: "فني تكييف", status: "متاح", rating: 4.8, tasks: 12 },
+    { name: "خالد عبدالله", role: "فني كهرباء", status: "مشغول", rating: 4.5, tasks: 8 },
+    { name: "سعد Ibrahim", role: "فني سباكة", status: "متاح", rating: 4.9, tasks: 15 },
+    { name: "ناصر علي", role: "فني عام", status: "إجازة", rating: 4.2, tasks: 5 },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">القوى العاملة</h1>
-          <p className="text-gray-500 mt-1">إدارة فريق العمل</p>
-        </div>
-        <button className="inline-flex items-center gap-2 bg-ayla-600 text-white px-4 py-2 rounded-lg hover:bg-ayla-700">
-          <Plus className="w-4 h-4" />
-          موظف جديد
-        </button>
+    <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <PageHeader 
+        title="الفريق" 
+        subtitle="إدارة فريق العمل والموظفين" 
+      />
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard title="إجمالي الفريق" value="45" icon={Users} delay={0} />
+        <StatCard title="المتاحين" value="28" icon={Wrench} delay={0.1} />
+        <StatCard title="المشغولين" value="12" icon={Clock} delay={0.2} />
+        <StatCard title="متوسط التقييم" value="4.6" icon={Star} delay={0.3} />
       </div>
 
-      {expiringSoon.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-yellow-800">
-            <AlertTriangle className="w-5 h-5" />
-            <span className="font-medium">تنبيه: {expiringSoon.length} إقامة تنتهي خلال 90 يوم</span>
-          </div>
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>
+            أعضاء الفريق
+          </h2>
         </div>
-      )}
-
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="بحث باسم الموظف أو المسمى الوظيفي..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pr-10 pl-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ayla-500"
-          />
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">الموظف</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">الوظيفة</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">الجوال</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">الإقامة</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">الحالة</th>
+            <thead>
+              <tr className="border-b border-[#C9A227]/20">
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>الاسم</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>الدور</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>الحالة</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>التقييم</th>
+                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>المهام</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredEmployees.map((employee) => (
-                <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
+            <tbody>
+              {team.map((member, i) => (
+                <tr key={i} className="border-b border-[#C9A227]/10 hover:bg-[#C9A227]/5 transition-colors">
+                  <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-ayla-100 rounded-full flex items-center justify-center">
-                        <Users className="w-5 h-5 text-ayla-600" />
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C9A227] to-[#E8D5A3] flex items-center justify-center text-[#1A0F09] font-bold">
+                        {member.name.charAt(0)}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{employee.name}</p>
-                        <p className="text-sm text-gray-500">{employee.nationality}</p>
-                      </div>
+                      <span className="font-medium text-[#2C1810]">{member.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm text-gray-900">{employee.job_title}</p>
-                    <p className="text-sm text-gray-500">{employee.department}</p>
+                  <td className="py-4 px-4 text-[#5C3A2A]">{member.role}</td>
+                  <td className="py-4 px-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      member.status === "متاح" ? "bg-green-100 text-green-800" :
+                      member.status === "مشغول" ? "bg-amber-100 text-amber-800" :
+                      "bg-gray-100 text-gray-800"
+                    }`}>{member.status}</span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <Phone className="w-4 h-4" />
-                      {employee.phone}
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-[#C9A227] fill-[#C9A227]" />
+                      <span className="text-[#2C1810] font-medium">{member.rating}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 text-sm">
-                      <Calendar className="w-4 h-4" />
-                      <span className={cn(
-                        new Date(employee.residency_expiry) < new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-                          ? 'text-red-600 font-medium'
-                          : 'text-gray-600'
-                      )}>
-                        {employee.residency_expiry}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={cn(
-                      'px-3 py-1 rounded-full text-sm font-medium',
-                      employee.status === 'active' ? 'bg-green-100 text-green-800' :
-                      employee.status === 'on_leave' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    )}>
-                      {employee.status === 'active' ? 'نشط' :
-                       employee.status === 'on_leave' ? 'إجازة' : 'منتهي'}
-                    </span>
-                  </td>
+                  <td className="py-4 px-4 text-[#5C3A2A]">{member.tasks}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

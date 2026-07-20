@@ -5,10 +5,11 @@ import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";
 import { Building2, MapPin, Users, Wrench, Download, Upload, Plus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function SchoolsPage() {
   const [showImportModal, setShowImportModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const schools = [
     { name: "مدرسة النور", location: "حي الروضة", students: 1200, projects: 5 },
@@ -28,6 +29,10 @@ export default function SchoolsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
   };
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +66,8 @@ export default function SchoolsPage() {
           </Link>
         </div>
       </div>
+
+      <input type="file" ref={fileInputRef} accept=".xlsx,.csv" className="hidden" onChange={handleFileImport} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard title="إجمالي المدارس" value="12" icon={Building2} delay={0} />
@@ -105,16 +112,20 @@ export default function SchoolsPage() {
 
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
-          <Card className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد المدارس</h3>
-            <label className="border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-[#C9A227]/5 transition-colors block">
-              <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
-              <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار ملف Excel</p>
-              <input type="file" accept=".xlsx,.csv" className="hidden" onChange={handleFileImport} />
-            </label>
-            <button onClick={() => setShowImportModal(false)}
-              className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
-          </Card>
+          <div className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <Card>
+              <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد المدارس</h3>
+              <button
+                onClick={openFilePicker}
+                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
+              >
+                <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
+                <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار ملف Excel</p>
+              </button>
+              <button onClick={() => setShowImportModal(false)}
+                className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
+            </Card>
+          </div>
         </div>
       )}
     </div>

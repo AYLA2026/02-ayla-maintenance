@@ -16,10 +16,11 @@ import {
   X
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function ReportsPage() {
   const [showImportModal, setShowImportModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reports = [
     { href: "/reports/cleaning", title: "تقرير التنظيف", icon: Droplets, desc: "تقارير أعمال التنظيف والصيانة الدورية" },
@@ -35,7 +36,6 @@ export default function ReportsPage() {
     { name: "تقرير البلاغات", format: "PowerPoint", icon: Presentation },
   ];
 
-  // تصدير ملف Excel حقيقي
   const exportExcel = (templateName: string) => {
     const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(
       "التقرير,التاريخ,المدرسة,الحالة\n" +
@@ -50,7 +50,6 @@ export default function ReportsPage() {
     document.body.removeChild(link);
   };
 
-  // تصدير PowerPoint (HTML كبديل)
   const exportPowerPoint = (templateName: string) => {
     const htmlContent = `
       <html>
@@ -76,7 +75,11 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
-  // استيراد ملف
+  // فتح نافذة اختيار الملف
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -84,7 +87,7 @@ export default function ReportsPage() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      alert(`تم استيراد الملف: ${file.name}\n\nالحجم: ${(file.size / 1024).toFixed(2)} KB\n\nسيتم تحليل البيانات وتعبئة التقرير تلقائياً...`);
+      alert(`✅ تم استيراد الملف: ${file.name}\n\nالحجم: ${(file.size / 1024).toFixed(2)} KB\n\nسيتم تحليل البيانات وتعبئة التقرير تلقائياً...`);
       console.log("محتوى الملف:", content.substring(0, 500));
       setShowImportModal(false);
     };
@@ -119,6 +122,15 @@ export default function ReportsPage() {
           </button>
         </div>
       </div>
+
+      {/* input مخفي */}
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        accept=".xlsx,.csv,.pptx,.ppt,.html" 
+        className="hidden" 
+        onChange={handleFileImport}
+      />
 
       {/* التقارير الرئيسية */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -180,40 +192,38 @@ export default function ReportsPage() {
       {/* نموذج استيراد */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
-          <Card className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>
-                استيراد نموذج تقرير
-              </h3>
-              <button onClick={() => setShowImportModal(false)} className="text-[#5C3A2A] hover:text-[#2C1810]">
-                <X className="w-5 h-5" />
+          <div className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>
+                  استيراد نموذج تقرير
+                </h3>
+                <button onClick={() => setShowImportModal(false)} className="text-[#5C3A2A] hover:text-[#2C1810]">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-[#5C3A2A] mb-4">
+                اختر ملف Excel أو PowerPoint يحتوي على نموذج تقرير إدارة التعليم
+              </p>
+              
+              {/* زر صريح لفتح الملف */}
+              <button
+                onClick={openFilePicker}
+                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
+              >
+                <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
+                <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
+                <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
               </button>
-            </div>
-            <p className="text-sm text-[#5C3A2A] mb-4">
-              اختر ملف Excel أو PowerPoint يحتوي على نموذج تقرير إدارة التعليم وسيقوم النظام بتحليله وتعبئته تلقائياً
-            </p>
-            
-            <label className="border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-[#C9A227]/5 transition-colors block">
-              <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
-              <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
-              <p className="text-xs text-[#C9A227]/60 mt-1">Excel (.xlsx, .csv) • PowerPoint (.pptx)</p>
-              <input 
-                type="file" 
-                accept=".xlsx,.csv,.pptx,.ppt,.html" 
-                className="hidden" 
-                onChange={handleFileImport}
-              />
-            </label>
 
-            <div className="flex gap-2">
               <button 
                 onClick={() => setShowImportModal(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors"
+                className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors"
               >
                 إلغاء
               </button>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
       )}
     </div>

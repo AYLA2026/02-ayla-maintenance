@@ -3,10 +3,11 @@
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
 import { Wind, Upload, Download, FileSpreadsheet, Presentation, Printer, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function HvacReportPage() {
   const [showImportModal, setShowImportModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const exportExcel = () => {
     const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(
@@ -76,19 +77,32 @@ export default function HvacReportPage() {
 
   const handlePrint = () => window.print();
 
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = () => {
       alert(`✅ تم استيراد: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم تحليل البيانات...`);
       setShowImportModal(false);
     };
     reader.readAsText(file);
+    e.target.value = "";
   };
 
   return (
     <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        accept=".xlsx,.csv,.pptx,.ppt,.html" 
+        className="hidden" 
+        onChange={handleFileImport}
+      />
+
       <div className="flex items-center justify-between mb-8">
         <PageHeader title="تقرير التكييف" subtitle="تقارير صيانة وأداء أنظمة التكييف" />
         <div className="flex gap-2">
@@ -169,20 +183,24 @@ export default function HvacReportPage() {
 
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
-          <Card className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد نموذج تقرير التكييف</h3>
-              <button onClick={() => setShowImportModal(false)} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
-            </div>
-            <label className="border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-[#C9A227]/5 transition-colors block">
-              <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
-              <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
-              <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
-              <input type="file" accept=".xlsx,.csv,.pptx,.ppt,.html" className="hidden" onChange={handleFileImport} />
-            </label>
-            <button onClick={() => setShowImportModal(false)}
-              className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
-          </Card>
+          <div className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد نموذج تقرير التكييف</h3>
+                <button onClick={() => setShowImportModal(false)} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
+              </div>
+              <button
+                onClick={openFilePicker}
+                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
+              >
+                <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
+                <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
+                <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
+              </button>
+              <button onClick={() => setShowImportModal(false)}
+                className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
+            </Card>
+          </div>
         </div>
       )}
     </div>

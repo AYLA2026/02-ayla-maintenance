@@ -5,9 +5,11 @@ import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";
 import { Calendar, Clock, CheckCircle, AlertCircle, Plus, Download, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function SchedulePage() {
+  const [showImportModal, setShowImportModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentWeek, setCurrentWeek] = useState("15 - 21 يوليو 2026");
 
   const schedule = [
@@ -24,26 +26,60 @@ export default function SchedulePage() {
     ]},
   ];
 
+  const exportExcel = () => {
+    const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(
+      "اليوم,التاريخ,الوقت,المهمة,الموقع,الفريق,الحالة\n" +
+      schedule.flatMap(d => d.tasks.map(t => `${d.day},${d.date},${t.time},${t.title},${t.location},${t.team},${t.status}`)).join("\n")
+    )}`;
+    const link = document.createElement("a");
+    link.href = csvContent;
+    link.download = "الجدولة_2026.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      alert(`✅ تم استيراد: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم تحديث الجدولة...`);
+      setShowImportModal(false);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   return (
     <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        accept=".xlsx,.csv" 
+        className="hidden" 
+        onChange={handleFileImport}
+      />
+
       <div className="flex items-center justify-between mb-8">
         <PageHeader title="الجدولة" subtitle="جدولة المهام والفريق" />
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
-            <Upload className="w-4 h-4" />
-            استيراد
+          <button onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Upload className="w-4 h-4" /> استيراد
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
-            <Download className="w-4 h-4" />
-            تصدير
+          <button onClick={exportExcel}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+            <Download className="w-4 h-4" /> تصدير
           </button>
-          <Link
-            href="/schedule/new"
+          <Link href="/schedule/new"
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#1A0F09] font-medium text-sm"
-            style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}
-          >
-            <Plus className="w-4 h-4" />
-            مهمة جديدة
+            style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}>
+            <Plus className="w-4 h-4" /> مهمة جديدة
           </Link>
         </div>
       </div>
@@ -55,20 +91,16 @@ export default function SchedulePage() {
         <StatCard title="متأخرة" value="2" icon={AlertCircle} delay={0.3} />
       </div>
 
-      {/* التنقل بين الأسابيع */}
       <div className="flex items-center justify-between mb-6">
         <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-[#5C3A2A] hover:bg-[#C9A227]/10 transition-colors">
-          <ChevronRight className="w-4 h-4" />
-          الأسبوع السابق
+          <ChevronRight className="w-4 h-4" /> الأسبوع السابق
         </button>
         <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>{currentWeek}</h2>
         <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-[#5C3A2A] hover:bg-[#C9A227]/10 transition-colors">
-          الأسبوع التالي
-          <ChevronLeft className="w-4 h-4" />
+          الأسبوع التالي <ChevronLeft className="w-4 h-4" />
         </button>
       </div>
 
-      {/* الجدول */}
       <div className="space-y-4">
         {schedule.map((day, i) => (
           <Card key={i} delay={i * 0.1}>
@@ -100,6 +132,25 @@ export default function SchedulePage() {
           </Card>
         ))}
       </div>
+
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
+          <div className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <Card>
+              <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد الجدولة</h3>
+              <button
+                onClick={openFilePicker}
+                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
+              >
+                <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
+                <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار ملف Excel</p>
+              </button>
+              <button onClick={() => setShowImportModal(false)}
+                className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

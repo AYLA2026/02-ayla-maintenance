@@ -73,45 +73,13 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
-  // استيراد ملف باستخدام window.showOpenFilePicker
-  const handleImport = async () => {
-    try {
-      // @ts-ignore
-      if (window.showOpenFilePicker) {
-        // @ts-ignore
-        const [fileHandle] = await window.showOpenFilePicker({
-          types: [
-            { description: 'Excel and PowerPoint files', accept: { 'application/*': ['.xlsx', '.csv', '.pptx', '.ppt'] } }
-          ]
-        });
-        const file = await fileHandle.getFile();
-        alert(`✅ تم اختيار الملف: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\n\nسيتم تحليل البيانات وتعبئة التقرير تلقائياً...`);
-        setShowImportModal(false);
-      } else {
-        // fallback للمتصفحات التي لا تدعم showOpenFilePicker
-        fallbackImport();
-      }
-    } catch (err) {
-      console.log("User cancelled or error:", err);
-    }
-  };
-
-  // طريقة بديلة باستخدام input
-  const fallbackImport = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".xlsx,.csv,.pptx,.ppt,.html";
-    input.style.display = "none";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        alert(`✅ تم اختيار الملف: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\n\nسيتم تحليل البيانات وتعبئة التقرير تلقائياً...`);
-        setShowImportModal(false);
-      }
-    };
-    document.body.appendChild(input);
-    input.click();
-    setTimeout(() => document.body.removeChild(input), 1000);
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    alert(`✅ تم اختيار الملف: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\n\nسيتم تحليل البيانات وتعبئة التقرير تلقائياً...`);
+    setShowImportModal(false);
+    // إعادة تعيين الـ input للسماح باختيار نفس الملف مرة أخرى
+    e.target.value = "";
   };
 
   return (
@@ -217,15 +185,22 @@ export default function ReportsPage() {
                 اختر ملف Excel أو PowerPoint يحتوي على نموذج تقرير إدارة التعليم
               </p>
               
-              {/* زر صريح */}
-              <button
-                onClick={handleImport}
-                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
+              {/* label + input - الطريقة الأكثر موثوقية */}
+              <label 
+                htmlFor="report-file-input"
+                className="block w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-[#C9A227]/5 transition-colors"
               >
                 <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
                 <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
                 <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
-              </button>
+              </label>
+              <input 
+                id="report-file-input"
+                type="file" 
+                accept=".xlsx,.csv,.pptx,.ppt,.html" 
+                className="hidden"
+                onChange={handleFileSelect}
+              />
 
               <button 
                 onClick={() => setShowImportModal(false)}

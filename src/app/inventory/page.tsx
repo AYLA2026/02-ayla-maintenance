@@ -30,40 +30,12 @@ export default function InventoryPage() {
     document.body.removeChild(link);
   };
 
-  const handleImport = async () => {
-    try {
-      // @ts-ignore
-      if (window.showOpenFilePicker) {
-        // @ts-ignore
-        const [fileHandle] = await window.showOpenFilePicker({
-          types: [{ description: 'Excel files', accept: { 'application/*': ['.xlsx', '.csv'] } }]
-        });
-        const file = await fileHandle.getFile();
-        alert(`✅ تم اختيار الملف: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم تحديث المخزون...`);
-        setShowImportModal(false);
-      } else {
-        fallbackImport();
-      }
-    } catch (err) {
-      console.log("User cancelled:", err);
-    }
-  };
-
-  const fallbackImport = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".xlsx,.csv";
-    input.style.display = "none";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        alert(`✅ تم اختيار الملف: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم تحديث المخزون...`);
-        setShowImportModal(false);
-      }
-    };
-    document.body.appendChild(input);
-    input.click();
-    setTimeout(() => document.body.removeChild(input), 1000);
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    alert(`✅ تم اختيار الملف: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم تحديث المخزون...`);
+    setShowImportModal(false);
+    e.target.value = "";
   };
 
   return (
@@ -133,13 +105,20 @@ export default function InventoryPage() {
           <div className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
             <Card>
               <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد المخزون</h3>
-              <button
-                onClick={handleImport}
-                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
+              <label 
+                htmlFor="inventory-file-input"
+                className="block w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-[#C9A227]/5 transition-colors"
               >
                 <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
                 <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار ملف Excel</p>
-              </button>
+              </label>
+              <input 
+                id="inventory-file-input"
+                type="file" 
+                accept=".xlsx,.csv" 
+                className="hidden"
+                onChange={handleFileSelect}
+              />
               <button onClick={() => setShowImportModal(false)}
                 className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
             </Card>

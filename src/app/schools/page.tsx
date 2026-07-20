@@ -5,11 +5,10 @@ import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";
 import { Building2, MapPin, Users, Wrench, Download, Upload, Plus } from "lucide-react";
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState } from "react";
 
 export default function SchoolsPage() {
   const [showImportModal, setShowImportModal] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const schools = [
     { name: "مدرسة النور", location: "حي الروضة", students: 1200, projects: 5 },
@@ -31,19 +30,40 @@ export default function SchoolsPage() {
     document.body.removeChild(link);
   };
 
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
+  const handleImport = async () => {
+    try {
+      // @ts-ignore
+      if (window.showOpenFilePicker) {
+        // @ts-ignore
+        const [fileHandle] = await window.showOpenFilePicker({
+          types: [{ description: 'Excel files', accept: { 'application/*': ['.xlsx', '.csv'] } }]
+        });
+        const file = await fileHandle.getFile();
+        alert(`✅ تم اختيار الملف: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم إضافة المدارس...`);
+        setShowImportModal(false);
+      } else {
+        fallbackImport();
+      }
+    } catch (err) {
+      console.log("User cancelled:", err);
+    }
   };
 
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      alert(`✅ تم استيراد: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم إضافة المدارس...`);
-      setShowImportModal(false);
+  const fallbackImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx,.csv";
+    input.style.display = "none";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        alert(`✅ تم اختيار الملف: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم إضافة المدارس...`);
+        setShowImportModal(false);
+      }
     };
-    reader.readAsText(file);
+    document.body.appendChild(input);
+    input.click();
+    setTimeout(() => document.body.removeChild(input), 1000);
   };
 
   return (
@@ -66,8 +86,6 @@ export default function SchoolsPage() {
           </Link>
         </div>
       </div>
-
-      <input type="file" ref={fileInputRef} accept=".xlsx,.csv" className="hidden" onChange={handleFileImport} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard title="إجمالي المدارس" value="12" icon={Building2} delay={0} />
@@ -116,7 +134,7 @@ export default function SchoolsPage() {
             <Card>
               <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد المدارس</h3>
               <button
-                onClick={openFilePicker}
+                onClick={handleImport}
                 className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
               >
                 <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />

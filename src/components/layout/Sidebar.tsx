@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   LogOut,
 } from "lucide-react";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const menuItems = [
   { title: "الرئيسية", href: "/", icon: LayoutDashboard },
@@ -47,13 +48,16 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* زر القائمة في الجوال */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-[#C9A227] text-[#1A0F09] md:hidden"
-      >
-        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+      {/* زر التنبيهات + القائمة في الجوال */}
+      <div className="fixed top-4 left-4 z-50 flex items-center gap-2">
+        <NotificationBell />
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-2 rounded-lg bg-[#C9A227] text-[#1A0F09] md:hidden"
+        >
+          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
 
       {/* الشريط الجانبي */}
       <aside
@@ -101,7 +105,7 @@ export default function Sidebar() {
             <LogOut className="w-5 h-5" />
             <span>تسجيل الخروج</span>
           </button>
-          
+
           <p className="text-xs text-[#5C3A2A] text-center pt-2 border-t border-[#C9A227]/10">
             مسؤول النظام<br/>
             م. محمد عبد الرحمن

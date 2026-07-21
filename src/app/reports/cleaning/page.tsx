@@ -2,7 +2,7 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
-import { Droplets, Upload, Download, FileSpreadsheet, Presentation, Printer, X } from "lucide-react";
+import { Droplets, Upload, FileSpreadsheet, Presentation, Printer, X } from "lucide-react";
 import { useState, useRef } from "react";
 
 export default function CleaningReportPage() {
@@ -50,10 +50,8 @@ export default function CleaningReportPage() {
   };
 
   const handlePrint = () => window.print();
-
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
+  const openFilePicker = () => fileInputRef.current?.click();
+  const closeModal = () => setShowImportModal(false);
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,8 +64,6 @@ export default function CleaningReportPage() {
     reader.readAsText(file);
     e.target.value = "";
   };
-
-  const closeModal = () => setShowImportModal(false);
 
   return (
     <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
@@ -152,23 +148,35 @@ export default function CleaningReportPage() {
         </div>
       </Card>
 
+      {/* مودال الاستيراد - div عادي بدون Card component */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
-          <div className="relative w-full max-w-md mx-4 rounded-2xl p-6"
-            style={{ background: "linear-gradient(145deg, #FAF7F2 0%, #F5E6D3 100%)", border: "1px solid rgba(201, 162, 39, 0.15)" }}>
+          <div className="relative w-full max-w-md mx-4 rounded-2xl p-6 bg-white"
+            style={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد نموذج تقرير التنظيف</h3>
-              <button onClick={closeModal} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
+              <button onClick={closeModal} className="text-[#5C3A2A] hover:text-[#2C1810] p-1">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <button type="button" onClick={openFilePicker}
-              className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors cursor-pointer">
+            <p className="text-sm text-[#5C3A2A] mb-4">
+              اختر ملف نموذج تقرير إدارة التعليم وسيقوم النظام بتحليله وتعبئة البيانات تلقائياً
+            </p>
+            
+            <div
+              onClick={openFilePicker}
+              className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors cursor-pointer"
+            >
               <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
               <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
-              <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
+              <p className="text-xs text-[#C9A227]/60 mt-1">Excel (.xlsx, .csv) • PowerPoint (.pptx)</p>
+            </div>
+
+            <button onClick={closeModal}
+              className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
+              إلغاء
             </button>
-            <button type="button" onClick={closeModal}
-              className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
           </div>
         </div>
       )}

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn } from "lucide-react";
-import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -47,8 +46,9 @@ export default function LoginPage() {
           <div className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}>
             <LogIn className="w-10 h-10 text-[#1A0F09]" />
           </div>
-          <h1 className="text-2xl font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>آيلا للصيانة</h1>
-          <p className="text-sm text-[#5C3A2A] mt-1">تسجيل الدخول إلى النظام</p>
+          <h1 className="text-2xl font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>Ayla Maintenance</h1>
+          <p className="text-sm text-[#5C3A2A] mt-1">آيلا للصيانة</p>
+          <p className="text-xs text-[#5C3A2A]/60 mt-2">نظام إدارة الصيانة المدرسية</p>
         </div>
 
         {/* النموذج */}
@@ -103,10 +103,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <Link href="/auth/register" className="text-sm text-[#5C3A2A] hover:text-[#C9A227] transition-colors">
-              ليس لديك حساب؟ سجل الآن
-            </Link>
+          {/* التوقيع */}
+          <div className="mt-6 pt-4 border-t border-[#C9A227]/20 text-center">
+            <p className="text-xs text-[#5C3A2A]/60">
+              مسؤول النظام<br/>
+              م. محمد عبد الرحمن
+            </p>
           </div>
         </div>
       </div>

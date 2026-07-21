@@ -24,7 +24,7 @@ export default function RootLayout({
       <body className={`${tajawal.variable} font-sans`}>
         <div className="flex min-h-screen">
           <Sidebar />
-          <main className="flex-1 md:mr-64">
+          <main className="flex-1 w-full md:w-[calc(100%-16rem)] md:mr-64">
             {children}
           </main>
         </div>

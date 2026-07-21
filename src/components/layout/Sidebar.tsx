@@ -1,117 +1,112 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Folder,
+  Building2,
+  Users,
+  Package,
+  Truck,
+  Wallet,
+  Calendar,
+  FileText,
+  AlertTriangle,
+  Settings,
+  Menu,
+  X,
+  ChevronLeft,
+} from "lucide-react";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+const menuItems = [
+  { title: "الرئيسية", href: "/", icon: LayoutDashboard },
+  { title: "المشاريع", href: "/projects", icon: Folder },
+  { title: "المدارس", href: "/schools", icon: Building2 },
+  { title: "القوى العاملة", href: "/workforce", icon: Users },
+  { title: "الفرق", href: "/teams", icon: Users },
+  { title: "المخازن", href: "/inventory", icon: Package },
+  { title: "المركبات", href: "/vehicles", icon: Truck },
+  { title: "المالية", href: "/finance", icon: Wallet },
+  { title: "الجدولة", href: "/schedule", icon: Calendar },
+  { title: "التقارير", href: "/reports", icon: FileText },
+  { title: "البلاغات", href: "/complaints", icon: AlertTriangle },
+  { title: "الإعدادات", href: "/settings", icon: Settings },
+];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+export default function Sidebar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-      } else {
-        router.push("/");
-        router.refresh();
-      }
-    } catch (err) {
-      setError("حدث خطأ أثناء تسجيل الدخول");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ❌ إخفاء الشريط في صفحات auth
+  if (pathname?.startsWith("/auth")) {
+    return null;
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
-      <div className="w-full max-w-md">
+    <>
+      {/* زر القائمة في الجوال */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-[#C9A227] text-[#1A0F09] md:hidden"
+      >
+        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
+
+      {/* الشريط الجانبي */}
+      <aside
+        className={`fixed right-0 top-0 h-screen w-64 z-40 transform transition-transform duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"}
+          bg-[#1A0F09] border-l border-[#C9A227]/20 flex flex-col`}
+      >
         {/* الشعار */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}>
-            <LogIn className="w-10 h-10 text-[#1A0F09]" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>Ayla Maintenance</h1>
-          <p className="text-sm text-[#5C3A2A] mt-1">آيلا للصيانة</p>
-          <p className="text-xs text-[#5C3A2A]/60 mt-2">نظام إدارة الصيانة المدرسية</p>
+        <div className="p-6 border-b border-[#C9A227]/20">
+          <h1 className="text-xl font-bold text-[#C9A227]" style={{ fontFamily: "var(--font-tajawal), sans-serif" }}>
+            Ayla Maintenance
+          </h1>
+          <p className="text-xs text-[#5C3A2A] mt-1">آيلا للصيانة</p>
         </div>
 
-        {/* النموذج */}
-        <div className="rounded-2xl p-8" style={{ background: "linear-gradient(145deg, #FAF7F2 0%, #F5E6D3 100%)", border: "1px solid rgba(201, 162, 39, 0.15)", boxShadow: "0 4px 20px rgba(201, 162, 39, 0.08)" }}>
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-100 text-red-800 text-sm text-center">
-              {error}
-            </div>
-          )}
+        {/* القائمة */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
+                  ${isActive 
+                    ? "bg-[#C9A227] text-[#1A0F09]" 
+                    : "text-[#FAF7F2]/70 hover:bg-[#C9A227]/10 hover:text-[#FAF7F2]"
+                  }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span>{item.title}</span>
+                {isActive && <ChevronLeft className="w-4 h-4 mr-auto" />}
+              </Link>
+            );
+          })}
+        </nav>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[#5C3A2A] mb-2">البريد الإلكتروني</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-lg border border-[#C9A227]/20 bg-white text-[#2C1810] outline-none focus:border-[#C9A227] text-sm"
-                placeholder="example@ayla.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#5C3A2A] mb-2">كلمة المرور</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-[#C9A227]/20 bg-white text-[#2C1810] outline-none focus:border-[#C9A227] text-sm pl-12"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5C3A2A] hover:text-[#2C1810]"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-lg text-[#1A0F09] font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}
-            >
-              {loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
-            </button>
-          </form>
-
-          {/* التوقيع */}
-          <div className="mt-6 pt-4 border-t border-[#C9A227]/20 text-center">
-            <p className="text-xs text-[#5C3A2A]/60">
-              مسؤول النظام<br/>
-              م. محمد عبد الرحمن
-            </p>
-          </div>
+        {/* التوقيع */}
+        <div className="p-4 border-t border-[#C9A227]/20">
+          <p className="text-xs text-[#5C3A2A] text-center">
+            مسؤول النظام<br/>
+            م. محمد عبد الرحمن
+          </p>
         </div>
-      </div>
-    </div>
+      </aside>
+
+      {/* خلفية داكنة للجوال */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
   );
 }

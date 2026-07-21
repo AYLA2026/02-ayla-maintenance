@@ -7,11 +7,19 @@ import { Package, ArrowDown, ArrowUp, AlertTriangle, Plus, Download, Upload, X }
 import Link from "next/link";
 import { useState, useRef } from "react";
 
+interface InventoryItem {
+  name: string;
+  category: string;
+  qty: number;
+  min: number;
+  unit: string;
+}
+
 export default function InventoryPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [items, setItems] = useState([
+  const [items, setItems] = useState<InventoryItem[]>([
     { name: "فلاتر مكيفات", category: "تكييف", qty: 45, min: 10, unit: "قطعة" },
     { name: "لمبات LED", category: "كهرباء", qty: 8, min: 20, unit: "علبة" },
     { name: "منظفات عامة", category: "تنظيف", qty: 120, min: 30, unit: "لتر" },
@@ -45,7 +53,7 @@ export default function InventoryPage() {
       const content = event.target?.result as string;
       try {
         const lines = content.trim().split("\n");
-        const newItems = [];
+        const newItems: InventoryItem[] = [];
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(",");
           if (cols.length >= 5) {

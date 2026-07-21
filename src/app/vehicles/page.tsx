@@ -7,11 +7,20 @@ import { Truck, Fuel, Wrench, AlertTriangle, Plus, Download, Upload, X } from "l
 import Link from "next/link";
 import { useState, useRef } from "react";
 
+interface Vehicle {
+  plate: string;
+  type: string;
+  driver: string;
+  status: string;
+  fuel: number;
+  lastMaint: string;
+}
+
 export default function VehiclesPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [vehicles, setVehicles] = useState([
+  const [vehicles, setVehicles] = useState<Vehicle[]>([
     { plate: "أ ب ج 1234", type: "بيك أب", driver: "أحمد محمد", status: "متاح", fuel: 85, lastMaint: "2026/06/15" },
     { plate: "أ ب ج 5678", type: "فان", driver: "خالد عبدالله", status: "مشغول", fuel: 45, lastMaint: "2026/07/01" },
     { plate: "أ ب ج 9012", type: "سطحه", driver: "سعد إبراهيم", status: "صيانة", fuel: 20, lastMaint: "2026/05/20" },
@@ -45,7 +54,7 @@ export default function VehiclesPage() {
       const content = event.target?.result as string;
       try {
         const lines = content.trim().split("\n");
-        const newVehicles = [];
+        const newVehicles: Vehicle[] = [];
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(",");
           if (cols.length >= 6) {

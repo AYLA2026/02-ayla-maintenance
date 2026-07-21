@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Folder,
@@ -18,6 +19,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  LogOut,
 } from "lucide-react";
 
 const menuItems = [
@@ -39,7 +41,6 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  // ❌ إخفاء الشريط في صفحات auth
   if (pathname?.startsWith("/auth")) {
     return null;
   }
@@ -91,9 +92,17 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* التوقيع */}
-        <div className="p-4 border-t border-[#C9A227]/20">
-          <p className="text-xs text-[#5C3A2A] text-center">
+        {/* زر الخروج + التوقيع */}
+        <div className="p-4 border-t border-[#C9A227]/20 space-y-3">
+          <button
+            onClick={() => signOut({ callbackUrl: "/auth/login" })}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>تسجيل الخروج</span>
+          </button>
+          
+          <p className="text-xs text-[#5C3A2A] text-center pt-2 border-t border-[#C9A227]/10">
             مسؤول النظام<br/>
             م. محمد عبد الرحمن
           </p>

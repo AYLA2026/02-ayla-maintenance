@@ -2,7 +2,7 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
-import { Wind, Upload, Download, FileSpreadsheet, Presentation, Printer, X } from "lucide-react";
+import { Wind, Upload, FileSpreadsheet, Presentation, Printer, X } from "lucide-react";
 import { useState, useRef } from "react";
 
 export default function HvacReportPage() {
@@ -27,42 +27,14 @@ export default function HvacReportPage() {
   const exportPowerPoint = () => {
     const htmlContent = `
       <html dir="rtl" lang="ar">
-        <head>
-          <meta charset="UTF-8">
-          <title>تقرير التكييف - يوليو 2026</title>
-          <style>
-            body { font-family: 'Tajawal', sans-serif; padding: 40px; color: #2C1810; }
-            h1 { color: #C9A227; border-bottom: 3px solid #C9A227; padding-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th { background: linear-gradient(135deg, #C9A227, #E8D5A3); color: #1A0F09; padding: 12px; }
-            td { padding: 10px; border-bottom: 1px solid #F5E6D3; }
-            .fault { color: red; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <h1>تقرير التكييف الشهري</h1>
-          <p><strong>المدرسة:</strong> مدرسة النور</p>
-          <p><strong>التاريخ:</strong> 20 يوليو 2026</p>
-          
-          <table>
-            <tr>
-              <th>الجهاز</th>
-              <th>الموقع</th>
-              <th>الحالة</th>
-              <th>درجة الحرارة</th>
-              <th>الضغط</th>
-              <th>ملاحظات</th>
-            </tr>
-            <tr><td>مكيف مركزي</td><td>مبنى A</td><td>يعمل</td><td>22°</td><td>150</td><td>طبيعي</td></tr>
-            <tr><td>مكيف سبلت</td><td>مبنى B</td><td>يعمل</td><td>24°</td><td>145</td><td>طبيعي</td></tr>
-            <tr><td>مكيف شباك</td><td>مبنى C</td><td class="fault">عطل</td><td>—</td><td>—</td><td>يحتاج صيانة</td></tr>
-          </table>
-          
-          <p style="margin-top: 30px; color: #5C3A2A;">
-            <strong>المسؤول:</strong> م. محمد عبد الرحمن
-          </p>
-        </body>
-      </html>
+        <head><meta charset="UTF-8"><title>تقرير التكييف</title>
+        <style>body{font-family:'Tajawal',sans-serif;padding:40px;color:#2C1810;}h1{color:#C9A227;border-bottom:3px solid #C9A227;}table{width:100%;border-collapse:collapse;margin-top:20px;}th{background:linear-gradient(135deg,#C9A227,#E8D5A3);padding:12px;}td{padding:10px;border-bottom:1px solid #F5E6D3;}.fault{color:red;font-weight:bold;}</style></head>
+        <body><h1>تقرير التكييف الشهري</h1><p><strong>المدرسة:</strong> مدرسة النور</p><p><strong>التاريخ:</strong> 20 يوليو 2026</p>
+        <table><tr><th>الجهاز</th><th>الموقع</th><th>الحالة</th><th>درجة الحرارة</th><th>الضغط</th><th>ملاحظات</th></tr>
+        <tr><td>مكيف مركزي</td><td>مبنى A</td><td>يعمل</td><td>22°</td><td>150</td><td>طبيعي</td></tr>
+        <tr><td>مكيف سبلت</td><td>مبنى B</td><td>يعمل</td><td>24°</td><td>145</td><td>طبيعي</td></tr>
+        <tr><td>مكيف شباك</td><td>مبنى C</td><td class="fault">عطل</td><td>—</td><td>—</td><td>يحتاج صيانة</td></tr>
+        </table></body></html>
     `;
     const blob = new Blob([htmlContent], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -76,17 +48,15 @@ export default function HvacReportPage() {
   };
 
   const handlePrint = () => window.print();
-
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
+  const openFilePicker = () => fileInputRef.current?.click();
+  const closeModal = () => setShowImportModal(false);
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      alert(`✅ تم استيراد: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم تحليل البيانات...`);
+      alert(`✅ تم استيراد: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB`);
       setShowImportModal(false);
     };
     reader.readAsText(file);
@@ -95,13 +65,7 @@ export default function HvacReportPage() {
 
   return (
     <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
-      <input 
-        type="file" 
-        ref={fileInputRef}
-        accept=".xlsx,.csv,.pptx,.ppt,.html" 
-        className="hidden" 
-        onChange={handleFileImport}
-      />
+      <input type="file" ref={fileInputRef} accept=".xlsx,.csv,.pptx,.ppt,.html" className="hidden" onChange={handleFileImport} />
 
       <div className="flex items-center justify-between mb-8">
         <PageHeader title="تقرير التكييف" subtitle="تقارير صيانة وأداء أنظمة التكييف" />
@@ -182,24 +146,22 @@ export default function HvacReportPage() {
       </Card>
 
       {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
-          <div className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد نموذج تقرير التكييف</h3>
-                <button onClick={() => setShowImportModal(false)} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
-              </div>
-              <button
-                onClick={openFilePicker}
-                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
-              >
-                <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
-                <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
-                <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
-              </button>
-              <button onClick={() => setShowImportModal(false)}
-                className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
-            </Card>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
+          <div className="relative w-full max-w-md mx-4 rounded-2xl p-6"
+            style={{ background: "linear-gradient(145deg, #FAF7F2 0%, #F5E6D3 100%)", border: "1px solid rgba(201, 162, 39, 0.15)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد نموذج تقرير التكييف</h3>
+              <button onClick={closeModal} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
+            </div>
+            <button type="button" onClick={openFilePicker}
+              className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors cursor-pointer">
+              <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
+              <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
+              <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
+            </button>
+            <button type="button" onClick={closeModal}
+              className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
           </div>
         </div>
       )}

@@ -2,12 +2,15 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
-import { Camera, Upload, Download, FileSpreadsheet, Presentation, Printer, X, ImagePlus } from "lucide-react";
-import { useState } from "react";
+import { Camera, Upload, FileSpreadsheet, Presentation, Printer, X, ImagePlus } from "lucide-react";
+import { useState, useRef } from "react";
 
 export default function PhotoReportPage() {
   const [showImportModal, setShowImportModal] = useState(false);
-  const [photos, setPhotos] = useState([
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const [photos] = useState([
     { id: 1, title: "صورة قبل التنظيف", desc: "مبنى A - الطابق الأول", date: "2026-07-15" },
     { id: 2, title: "صورة بعد التنظيف", desc: "مبنى A - الطابق الأول", date: "2026-07-20" },
     { id: 3, title: "عطل المكيف", desc: "مبنى C - غرفة 105", date: "2026-07-18" },
@@ -47,6 +50,9 @@ export default function PhotoReportPage() {
   };
 
   const handlePrint = () => window.print();
+  const openFilePicker = () => fileInputRef.current?.click();
+  const openPhotoPicker = () => photoInputRef.current?.click();
+  const closeModal = () => setShowImportModal(false);
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,16 +63,21 @@ export default function PhotoReportPage() {
       setShowImportModal(false);
     };
     reader.readAsText(file);
+    e.target.value = "";
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     alert(`تم اختيار ${files.length} صورة للرفع`);
+    e.target.value = "";
   };
 
   return (
     <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
+      <input type="file" ref={fileInputRef} accept=".xlsx,.csv,.pptx,.ppt,.html" className="hidden" onChange={handleFileImport} />
+      <input type="file" ref={photoInputRef} accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
+
       <div className="flex items-center justify-between mb-8">
         <PageHeader title="تقرير الصور" subtitle="تقارير مصورة للمواقع والأعمال" />
         <div className="flex gap-2">
@@ -101,15 +112,13 @@ export default function PhotoReportPage() {
           </div>
         </div>
 
-        {/* رفع صور جديدة */}
-        <label className="border-2 border-dashed border-[#C9A227]/30 rounded-xl p-6 text-center mb-6 cursor-pointer hover:bg-[#C9A227]/5 transition-colors block">
+        <button onClick={openPhotoPicker}
+          className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-6 text-center mb-6 hover:bg-[#C9A227]/5 transition-colors cursor-pointer">
           <ImagePlus className="w-8 h-8 text-[#C9A227] mx-auto mb-2" />
           <p className="text-sm text-[#5C3A2A]">اضغط هنا لرفع صور جديدة</p>
           <p className="text-xs text-[#C9A227]/60 mt-1">JPG, PNG, WEBP</p>
-          <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
-        </label>
+        </button>
 
-        {/* قائمة الصور */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {photos.map((photo) => (
             <div key={photo.id} className="p-4 rounded-xl border border-[#C9A227]/15" style={{ background: "linear-gradient(145deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
@@ -125,21 +134,23 @@ export default function PhotoReportPage() {
       </Card>
 
       {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
-          <Card className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
+          <div className="relative w-full max-w-md mx-4 rounded-2xl p-6"
+            style={{ background: "linear-gradient(145deg, #FAF7F2 0%, #F5E6D3 100%)", border: "1px solid rgba(201, 162, 39, 0.15)" }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد نموذج تقرير الصور</h3>
-              <button onClick={() => setShowImportModal(false)} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
+              <button onClick={closeModal} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
             </div>
-            <label className="border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-[#C9A227]/5 transition-colors block">
+            <button type="button" onClick={openFilePicker}
+              className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors cursor-pointer">
               <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
               <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
               <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
-              <input type="file" accept=".xlsx,.csv,.pptx,.ppt,.html" className="hidden" onChange={handleFileImport} />
-            </label>
-            <button onClick={() => setShowImportModal(false)}
+            </button>
+            <button type="button" onClick={closeModal}
               className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
-          </Card>
+          </div>
         </div>
       )}
     </div>

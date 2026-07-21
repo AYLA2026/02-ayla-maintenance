@@ -2,7 +2,7 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
-import { Wrench, Upload, Download, FileSpreadsheet, Presentation, Printer, X } from "lucide-react";
+import { Wrench, Upload, FileSpreadsheet, Presentation, Printer, X } from "lucide-react";
 import { useState, useRef } from "react";
 
 export default function OmReportPage() {
@@ -48,10 +48,8 @@ export default function OmReportPage() {
   };
 
   const handlePrint = () => window.print();
-
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
+  const openFilePicker = () => fileInputRef.current?.click();
+  const closeModal = () => setShowImportModal(false);
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,13 +65,7 @@ export default function OmReportPage() {
 
   return (
     <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
-      <input 
-        type="file" 
-        ref={fileInputRef}
-        accept=".xlsx,.csv,.pptx,.ppt,.html" 
-        className="hidden" 
-        onChange={handleFileImport}
-      />
+      <input type="file" ref={fileInputRef} accept=".xlsx,.csv,.pptx,.ppt,.html" className="hidden" onChange={handleFileImport} />
 
       <div className="flex items-center justify-between mb-8">
         <PageHeader title="تقرير الصيانة" subtitle="تقارير الصيانة العامة والإصلاحات" />
@@ -154,24 +146,22 @@ export default function OmReportPage() {
       </Card>
 
       {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
-          <div className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد نموذج تقرير الصيانة</h3>
-                <button onClick={() => setShowImportModal(false)} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
-              </div>
-              <button
-                onClick={openFilePicker}
-                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
-              >
-                <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
-                <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
-                <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
-              </button>
-              <button onClick={() => setShowImportModal(false)}
-                className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
-            </Card>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
+          <div className="relative w-full max-w-md mx-4 rounded-2xl p-6"
+            style={{ background: "linear-gradient(145deg, #FAF7F2 0%, #F5E6D3 100%)", border: "1px solid rgba(201, 162, 39, 0.15)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد نموذج تقرير الصيانة</h3>
+              <button onClick={closeModal} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
+            </div>
+            <button type="button" onClick={openFilePicker}
+              className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors cursor-pointer">
+              <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
+              <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار الملف</p>
+              <p className="text-xs text-[#C9A227]/60 mt-1">Excel, PowerPoint</p>
+            </button>
+            <button type="button" onClick={closeModal}
+              className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
           </div>
         </div>
       )}

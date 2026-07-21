@@ -3,7 +3,7 @@
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";
-import { Package, ArrowDown, ArrowUp, AlertTriangle, Plus, Download, Upload } from "lucide-react";
+import { Package, ArrowDown, ArrowUp, AlertTriangle, Plus, Download, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useRef } from "react";
 
@@ -11,12 +11,12 @@ export default function InventoryPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const items = [
+  const [items, setItems] = useState([
     { name: "فلاتر مكيفات", category: "تكييف", qty: 45, min: 10, unit: "قطعة" },
     { name: "لمبات LED", category: "كهرباء", qty: 8, min: 20, unit: "علبة" },
     { name: "منظفات عامة", category: "تنظيف", qty: 120, min: 30, unit: "لتر" },
     { name: "مواسير PVC", category: "سباكة", qty: 25, min: 15, unit: "متر" },
-  ];
+  ]);
 
   const exportExcel = () => {
     const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(
@@ -35,12 +35,36 @@ export default function InventoryPage() {
     fileInputRef.current?.click();
   };
 
+  const closeModal = () => setShowImportModal(false);
+
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      alert(`✅ تم استيراد: ${file.name}\nالحجم: ${(file.size / 1024).toFixed(2)} KB\nسيتم تحديث المخزون...`);
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      try {
+        const lines = content.trim().split("\n");
+        const newItems = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(",");
+          if (cols.length >= 5) {
+            newItems.push({
+              name: cols[0]?.trim() || "صنف جديد",
+              category: cols[1]?.trim() || "عام",
+              qty: parseInt(cols[2]?.trim()) || 0,
+              min: parseInt(cols[3]?.trim()) || 0,
+              unit: cols[4]?.trim() || "قطعة",
+            });
+          }
+        }
+        if (newItems.length > 0) {
+          setItems(prev => [...prev, ...newItems]);
+          alert(`✅ تم استيراد ${newItems.length} صنف بنجاح!`);
+        }
+      } catch (err) {
+        alert("⚠️ خطأ في قراءة الملف.");
+      }
       setShowImportModal(false);
     };
     reader.readAsText(file);
@@ -49,13 +73,7 @@ export default function InventoryPage() {
 
   return (
     <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
-      <input 
-        type="file" 
-        ref={fileInputRef}
-        accept=".xlsx,.csv" 
-        className="hidden" 
-        onChange={handleFileImport}
-      />
+      <input type="file" ref={fileInputRef} accept=".csv,.xlsx" className="hidden" onChange={handleFileImport} />
 
       <div className="flex items-center justify-between mb-8">
         <PageHeader title="المخازن" subtitle="إدارة المخزون والمواد" />
@@ -77,10 +95,10 @@ export default function InventoryPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard title="إجمالي الأصناف" value="156" icon={Package} delay={0} />
+        <StatCard title="إجمالي الأصناف" value={items.length.toString()} icon={Package} delay={0} />
         <StatCard title="وارد اليوم" value="12" icon={ArrowDown} delay={0.1} />
         <StatCard title="صادر اليوم" value="8" icon={ArrowUp} delay={0.2} />
-        <StatCard title="نفاد الكمية" value="3" icon={AlertTriangle} delay={0.3} />
+        <StatCard title="نفاد الكمية" value={items.filter(i => i.qty <= i.min).length.toString()} icon={AlertTriangle} delay={0.3} />
       </div>
 
       <Card>
@@ -118,20 +136,29 @@ export default function InventoryPage() {
       </Card>
 
       {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
-          <div className="w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <Card>
-              <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد المخزون</h3>
-              <button
-                onClick={openFilePicker}
-                className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors"
-              >
-                <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
-                <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار ملف Excel</p>
-              </button>
-              <button onClick={() => setShowImportModal(false)}
-                className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
-            </Card>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
+          <div className="relative w-full max-w-md mx-4 rounded-2xl p-6"
+            style={{ background: "linear-gradient(145deg, #FAF7F2 0%, #F5E6D3 100%)", border: "1px solid rgba(201, 162, 39, 0.15)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد المخزون</h3>
+              <button onClick={closeModal} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-sm text-[#5C3A2A] mb-4">
+              اختر ملف CSV يحتوي على بيانات المخزون:
+            </p>
+            <div className="bg-white/50 rounded-lg p-3 mb-4 text-xs text-[#5C3A2A] font-mono border border-[#C9A227]/20">
+              الصنف,التصنيف,الكمية,الحد الأدنى,الوحدة<br/>
+              فلاتر مكيفات,تكييف,45,10,قطعة
+            </div>
+            <button type="button" onClick={openFilePicker}
+              className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors cursor-pointer">
+              <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
+              <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار ملف CSV</p>
+              <p className="text-xs text-[#C9A227]/60 mt-1">CSV فقط</p>
+            </button>
+            <button type="button" onClick={closeModal}
+              className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
           </div>
         </div>
       )}

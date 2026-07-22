@@ -15,6 +15,7 @@ import {
   Calendar,
   FileText,
   AlertTriangle,
+  Wrench,
   Settings,
   Menu,
   X,
@@ -35,6 +36,7 @@ const menuItems = [
   { title: "الجدولة", href: "/schedule", icon: Calendar },
   { title: "التقارير", href: "/reports", icon: FileText },
   { title: "البلاغات", href: "/complaints", icon: AlertTriangle },
+  { title: "الفنيين", href: "/technicians", icon: Wrench },
   { title: "الإعدادات", href: "/settings", icon: Settings },
 ];
 

@@ -97,3 +97,177 @@ model whatsapp_messages {
   created_at   DateTime?   @default(now()) @db.Timestamptz(6)
   complaint    complaints? @relation(fields: [complaint_id], references: [id])
 }
+// === جداول نظام البلاغات ===
+
+model School {
+  id          String   @id @default(cuid())
+  name        String
+  referenceNo String   @unique
+  address     String?
+  building    String?
+  phone       String?
+  whatsappNo  String?
+  latitude    Float?
+  longitude   Float?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supervisors SchoolSupervisor[]
+  reports     Report[]
+}
+
+model Supervisor {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String   @unique
+  email       String?
+  whatsappNo  String   @unique
+  password    String
+  role        SupervisorRole @default(SUPERVISOR)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schools   SchoolSupervisor[]
+  reports   Report[] @relation("SupervisorReports")
+}
+
+model SchoolSupervisor {
+  id           String @id @default(cuid())
+  schoolId     String
+  supervisorId String
+  
+  school       School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  supervisor   Supervisor @relation(fields: [supervisorId], references: [id], onDelete: Cascade)
+  
+  assignedAt   DateTime @default(now())
+  
+  @@unique([schoolId, supervisorId])
+}
+
+model Technician {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String   @unique
+  whatsappNo  String   @unique
+  email       String?
+  password    String
+  specialty   String?
+  isActive    Boolean  @default(true)
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reports     Report[] @relation("TechnicianReports")
+}
+
+model Report {
+  id              String      @id @default(cuid())
+  reportNo        String      @unique @default(cuid())
+  title           String
+  description     String
+  category        ReportCategory
+  priority        Priority    @default(MEDIUM)
+  status          ReportStatus @default(PENDING)
+  
+  senderPhone     String
+  senderName      String?
+  senderType      SenderType  @default(UNKNOWN)
+  
+  schoolId        String?
+  school          School?     @relation(fields: [schoolId], references: [id])
+  
+  supervisorId    String?
+  supervisor      Supervisor? @relation("SupervisorReports", fields: [supervisorId], references: [id])
+  
+  technicianId    String?
+  technician      Technician? @relation("TechnicianReports", fields: [technicianId], references: [id])
+  
+  images          Json?
+  location        Json?
+  messages        Message[]
+  
+  rating          Int?
+  feedback        String?
+  
+  receivedAt      DateTime    @default(now())
+  assignedAt      DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  closedAt        DateTime?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([status])
+  @@index([schoolId])
+  @@index([senderPhone])
+  @@index([receivedAt])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  from      String
+  to        String
+  content   String
+  type      MessageType @default(TEXT)
+  mediaUrl  String?
+  
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum ReportCategory {
+  ELECTRICAL
+  PLUMBING
+  HVAC
+  CARPENTRY
+  PAINTING
+  CLEANING
+  SECURITY
+  IT
+  FURNITURE
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ReportStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CLOSED
+  CANCELLED
+}
+
+enum SenderType {
+  WHATSAPP_SCHOOL
+  WHATSAPP_DIRECT
+  PLATFORM_API
+  MANUAL
+  UNKNOWN
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  LOCATION
+  AUDIO
+  DOCUMENT
+}
+
+enum SupervisorRole {
+  ADMIN
+  SUPERVISOR
+  MANAGER
+}

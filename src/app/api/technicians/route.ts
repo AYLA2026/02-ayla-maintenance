@@ -1,32 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 
+/**
+ * GET: جلب كل الفنيين
+ */
 export async function GET() {
   try {
-    const schools = await prisma.school.findMany({
+    const technicians = await prisma.technician.findMany({
       include: {
-        supervisors: {
-          include: { supervisor: { select: { id: true, name: true, phone: true } } }
-        },
         _count: { select: { reports: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
-    return NextResponse.json(schools);
+    return NextResponse.json(technicians);
   } catch (error) {
-    console.error('GET schools error:', error);
+    console.error('GET technicians error:', error);
     return NextResponse.json([], { status: 200 });
   }
 }
 
+/**
+ * POST: إضافة فني جديد
+ */
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
 
-    const existing = await prisma.school.findFirst({
+    // تحقق من التكرار - رقم الهاتف أو واتساب
+    const existing = await prisma.technician.findFirst({
       where: {
         OR: [
-          { referenceNo: data.referenceNo },
+          { phone: data.phone },
           { whatsappNo: data.whatsappNo }
         ]
       }
@@ -34,27 +38,27 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       return NextResponse.json(
-        { error: 'الرقم المرجعي أو واتساب مسجل مسبقاً' },
+        { error: 'رقم الهاتف أو واتساب مسجل مسبقاً' },
         { status: 400 }
       );
     }
 
-    const school = await prisma.school.create({
+    const technician = await prisma.technician.create({
       data: {
         name: data.name,
-        referenceNo: data.referenceNo,
-        address: data.address,
-        building: data.building,
         phone: data.phone,
         whatsappNo: data.whatsappNo,
+        email: data.email,
+        password: data.password,
+        specialty: data.specialty,
       }
     });
 
-    return NextResponse.json(school, { status: 201 });
+    return NextResponse.json(technician, { status: 201 });
   } catch (error) {
-    console.error('POST school error:', error);
+    console.error('POST technician error:', error);
     return NextResponse.json(
-      { error: 'فشل إنشاء المدرسة' },
+      { error: 'فشل إنشاء الفني' },
       { status: 500 }
     );
   }

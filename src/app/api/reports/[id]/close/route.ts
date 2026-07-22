@@ -1,65 +1,55 @@
+// src/app/api/reports/[id]/close/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { sendWhatsAppMessage, notifySupervisorReportClosed } from '@/lib/whatsapp/send';
-import { sendPushNotification } from '@/lib/notifications/push';
+import { sendWhatsAppMessage } from '@/lib/whatsapp/send';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { beforeImages, afterImages, feedback, rating } = await req.json();
-    const technicianId = req.headers.get('x-technician-id');
+    const { id } = await params;
+    const data = await req.json();
 
-    const report = await prisma.report.findUnique({
-      where: { id: params.id },
-      include: { technician: true, school: true, supervisor: true }
-    });
-
-    if (!report) {
-      return NextResponse.json({ error: 'البلاغ غير موجود' }, { status: 404 });
-    }
-
-    if (report.technicianId !== technicianId) {
-      return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
-    }
-
-    const updatedReport = await prisma.report.update({
-      where: { id: params.id },
+    // تحديث البلاغ
+    const report = await prisma.report.update({
+      where: { id },
       data: {
-        status: 'CLOSED',
-        images: JSON.stringify([
-          ...(beforeImages || []).map((url: string) => ({ url, type: 'before' })),
-          ...(afterImages || []).map((url: string) => ({ url, type: 'after' }))
-        ]),
-        feedback,
-        rating,
-        closedAt: new Date()
+        status: 'مغلق',
+        closeNotes: data.closeNotes,
+        rating: data.rating,
+        closedAt: new Date(),
+        technicianId: data.technicianId,
       },
-      include: { technician: true, school: true, supervisor: true }
+      include: {
+        school: true,
+        technician: true,
+        supervisor: true,
+      },
     });
 
-    if (updatedReport.supervisor) {
-      await notifySupervisorReportClosed(updatedReport, updatedReport.technician);
-      await sendPushNotification({
-        userId: updatedReport.supervisorId,
-        title: `✅ تم إغلاق البلاغ ${updatedReport.reportNo}`,
-        body: `بواسطة ${updatedReport.technician?.name}`,
-        data: { reportId: updatedReport.id, type: 'REPORT_CLOSED' }
+    // إشعار واتساب للمشرف
+    if (report.supervisor?.phone) {
+      await sendWhatsAppMessage({
+        to: report.supervisor.phone,
+        body: `✅ تم إغلاق البلاغ #${report.reportNumber}\n\nالفني: ${report.technician?.name}\nالتقييم: ${'⭐'.repeat(report.rating || 0)}\nملاحظات: ${report.closeNotes}`,
       });
     }
 
-    await sendWhatsAppMessage(updatedReport.senderPhone,
-      `✅ *تم إنجاز بلاغك!*\n\n` +
-      `🔢 *رقم البلاغ:* ${updatedReport.reportNo}\n` +
-      `👨‍🔧 *الفني:* ${updatedReport.technician?.name}\n` +
-      `📅 *تاريخ الإنجاز:* ${new Date().toLocaleString('ar-SA')}\n\n` +
-      `🙏 شكراً لاستخدامكم منصة آيلا للصيانة`
-    );
+    // إشعار واتساب للمدرسة
+    if (report.school?.phone) {
+      await sendWhatsAppMessage({
+        to: report.school.phone,
+        body: `تم إغلاق بلاغكم #${report.reportNumber} ✅\nالتقييم: ${'⭐'.repeat(report.rating || 0)}\nشكراً لثقتكم بآيلا للصيانة`,
+      });
+    }
 
-    return NextResponse.json({ success: true, report: updatedReport });
+    return NextResponse.json(report);
   } catch (error) {
     console.error('Close report error:', error);
-    return NextResponse.json({ error: 'فشل إغلاق البلاغ' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'فشل إغلاق البلاغ' },
+      { status: 500 }
+    );
   }
 }

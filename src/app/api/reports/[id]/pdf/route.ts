@@ -29,7 +29,7 @@ export async function GET(
 <html dir="rtl" lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>تقرير البلاغ #${report.reportNumber}</title>
+  <title>تقرير البلاغ #${report.reportNo}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -149,10 +149,10 @@ export async function GET(
       <div class="logo">🏗️ آيلا للصيانة</div>
       <div class="subtitle">منصة إدارة الصيانة المدرسية الذكية</div>
       <div style="margin-top: 16px;">
-        <span class="badge badge-status-${report.status === 'مغلق' ? 'closed' : report.status === 'جديد' ? 'new' : 'processing'}">${report.status}</span>
-        <span class="badge badge-priority-${report.priority === 'عالي' || report.priority === 'عاجل' ? 'high' : report.priority === 'متوسط' ? 'medium' : 'low'}">${report.priority}</span>
+        <span class="badge badge-status-${report.status === 'CLOSED' ? 'closed' : report.status === 'PENDING' ? 'new' : 'processing'}">${report.status === 'CLOSED' ? 'مغلق' : report.status === 'PENDING' ? 'جديد' : 'قيد المعالجة'}</span>
+        <span class="badge badge-priority-${report.priority === 'HIGH' || report.priority === 'URGENT' ? 'high' : report.priority === 'MEDIUM' ? 'medium' : 'low'}">${report.priority === 'HIGH' ? 'عالي' : report.priority === 'URGENT' ? 'عاجل' : report.priority === 'MEDIUM' ? 'متوسط' : 'منخفض'}</span>
       </div>
-      <div style="margin-top: 12px; font-size: 18px; font-weight: 700;">تقرير البلاغ #${report.reportNumber}</div>
+      <div style="margin-top: 12px; font-size: 18px; font-weight: 700;">تقرير البلاغ #${report.reportNo}</div>
     </div>
 
     <div class="section">
@@ -162,8 +162,8 @@ export async function GET(
         <div class="info-item"><div class="info-label">الفئة</div><div class="info-value">${report.category || '—'}</div></div>
         <div class="info-item"><div class="info-label">المشرف المسؤول</div><div class="info-value">${report.supervisor?.name || '—'}</div></div>
         <div class="info-item"><div class="info-label">الفني المعالج</div><div class="info-value">${report.technician?.name || '—'}</div></div>
-        <div class="info-item"><div class="info-label">رقم التواصل</div><div class="info-value">${report.phone || '—'}</div></div>
-        <div class="info-item"><div class="info-label">تاريخ الاستلام</div><div class="info-value">${report.createdAt ? new Date(report.createdAt).toLocaleDateString('ar-SA') : '—'}</div></div>
+        <div class="info-item"><div class="info-label">رقم التواصل</div><div class="info-value">${report.senderPhone || '—'}</div></div>
+        <div class="info-item"><div class="info-label">تاريخ الاستلام</div><div class="info-value">${report.receivedAt ? new Date(report.receivedAt).toLocaleDateString('ar-SA') : '—'}</div></div>
       </div>
     </div>
 
@@ -172,10 +172,10 @@ export async function GET(
       <div class="description">${report.description || 'لا يوجد وصف'}</div>
     </div>
 
-    ${report.status === 'مغلق' ? `
+    ${report.status === 'CLOSED' ? `
     <div class="section">
       <div class="section-title">✅ ملاحظات الإغلاق</div>
-      <div class="description">${report.closeNotes || 'لا يوجد ملاحظات'}</div>
+      <div class="description">${report.feedback || 'لا يوجد ملاحظات'}</div>
       <div style="margin-top: 16px;"><div class="info-label">التقييم</div><div class="rating">${'⭐'.repeat(report.rating || 0)}</div></div>
       <div class="info-item" style="margin-top: 12px;"><div class="info-label">تاريخ الإغلاق</div><div class="info-value">${report.closedAt ? new Date(report.closedAt).toLocaleDateString('ar-SA') : '—'}</div></div>
     </div>

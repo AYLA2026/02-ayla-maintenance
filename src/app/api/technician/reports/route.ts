@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-declare global {
-  var __aylaReports: any[] | undefined;
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const technicianId = searchParams.get('technicianId');
@@ -13,9 +9,9 @@ export async function GET(request: NextRequest) {
   }
 
   // جلب البلاغات الموزعة من الذاكرة
-  const all = globalThis.__aylaReports || [];
+  const all = (globalThis as any).__aylaReports || [];
 
-  // فلترة البلاغات الموجهة لهذا الفني + Demo ثابت
+  // Demo ثابت
   const DEMO = [
     {
       id: 'rep-001',

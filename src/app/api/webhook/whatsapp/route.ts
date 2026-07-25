@@ -3,16 +3,12 @@ import { analyzeReport, matchTechnician, DEMO_TECHNICIANS, Report } from '@/lib/
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'ayla_verify_2026';
 
-/* 🗃️ مخزن مؤقت في الذاكرة (للـ Demo — في الإنتاج استخدم Prisma/Redis) */
-declare global {
-  var __aylaReports: Report[] | undefined;
-  var __aylaNotifications: any[] | undefined;
-}
-const incomingReports = globalThis.__aylaReports || [];
-globalThis.__aylaReports = incomingReports;
+/* 🗃️ مخزن مؤقت في الذاكرة */
+const incomingReports: Report[] = (globalThis as any).__aylaReports || [];
+(globalThis as any).__aylaReports = incomingReports;
 
-const notifications = globalThis.__aylaNotifications || [];
-globalThis.__aylaNotifications = notifications;
+const notifications: any[] = (globalThis as any).__aylaNotifications || [];
+(globalThis as any).__aylaNotifications = notifications;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

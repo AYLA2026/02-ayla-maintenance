@@ -1,9 +1,5 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 export interface ClassificationResult {
   title: string;
   category: string;
@@ -18,7 +14,17 @@ export async function classifyReport(
   content: string,
   mediaUrls: string[]
 ): Promise<ClassificationResult> {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  // لو ما في مفتاح → نرجع للـ fallback فوراً بدون ما ننشئ عميل
+  if (!apiKey) {
+    console.log('⚠️ OPENAI_API_KEY missing — using fallback classification');
+    return fallbackClassify(content);
+  }
+
   try {
+    const openai = new OpenAI({ apiKey });
+
     const systemPrompt = `أنت مساعد ذكي متخصص في تصنيف بلاغات الصيانة للمدارس.
 حلل الوصف والصور (إن وجدت) وحدد:
 1. عنوان مختصر للبلاغ

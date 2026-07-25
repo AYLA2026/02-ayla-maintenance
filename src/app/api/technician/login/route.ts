@@ -1,4 +1,6 @@
-export async function POST(request) {
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { phone, password } = body;
@@ -8,18 +10,18 @@ export async function POST(request) {
       { id: "2", name: "فني سباكة", phone: "966509876543", password: "123456" }
     ];
 
-    const user = DEMO_USERS.find(u => u.phone === phone && u.password === password);
-    
+    const user = DEMO_USERS.find((u) => u.phone === phone && u.password === password);
+
     if (!user) {
-      return Response.json({ error: "بيانات غير صحيحة" }, { status: 401 });
+      return NextResponse.json({ error: "بيانات غير صحيحة" }, { status: 401 });
     }
 
-    return Response.json({
+    return NextResponse.json({
       token: "demo-token-" + user.id,
       technicianId: user.id,
-      name: user.name
+      name: user.name,
     });
   } catch (e) {
-    return Response.json({ error: "خطأ في الطلب" }, { status: 500 });
+    return NextResponse.json({ error: "خطأ في الطلب" }, { status: 500 });
   }
 }

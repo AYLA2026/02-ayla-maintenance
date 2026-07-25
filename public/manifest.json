@@ -1,0 +1,19 @@
+{
+  "name": "آيلا للصيانة - تطبيق الفني",
+  "short_name": "آيلا فني",
+  "description": "تطبيق الفنيين لإدارة بلاغات الصيانة المدرسية",
+  "start_url": "/technician-app",
+  "display": "standalone",
+  "background_color": "#1A0F09",
+  "theme_color": "#C9A227",
+  "orientation": "portrait",
+  "scope": "/technician-app",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

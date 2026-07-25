@@ -1,13 +1,46 @@
-// src/app/page.tsx (مُصلح)
 "use client";
 
+import { useEffect, useState } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import Card from "@/components/layout/Card";
 import StatCard from "@/components/layout/StatCard";
 import { Building2, Wrench, Users, Truck, Package, Calendar, AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
+// Chart.js imports
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement,
+} from "chart.js";
+import { Bar, Doughnut, Line } from "react-chartjs-2";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement
+);
+
 export default function DashboardPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const stats = [
     { title: "المدارس", value: "12", icon: Building2, href: "/schools", color: "from-blue-500 to-blue-600" },
     { title: "الفرق", value: "5", icon: Users, href: "/teams", color: "from-green-500 to-green-600" },
@@ -23,11 +56,102 @@ export default function DashboardPage() {
     { title: "مهمة مجدولة", desc: "تنظيف مدرسة النور — 06:00 صباحاً", type: "info" },
   ];
 
+  // Chart data
+  const monthlyData = {
+    labels: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو"],
+    datasets: [
+      {
+        label: "البلاغات",
+        data: [12, 19, 15, 25, 22, 30, 48],
+        backgroundColor: "rgba(201, 162, 39, 0.8)",
+        borderColor: "#C9A227",
+        borderWidth: 2,
+        borderRadius: 8,
+      },
+    ],
+  };
+
+  const categoryData = {
+    labels: ["كهرباء", "سباكة", "تكييف", "نجارة", "دهان", "تنظيف", "أخرى"],
+    datasets: [
+      {
+        data: [15, 12, 8, 5, 4, 3, 1],
+        backgroundColor: [
+          "#C9A227", "#D4AF37", "#E5C158", "#B8921F",
+          "#A07820", "#8B6914", "#6B4E0A",
+        ],
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  const priorityTrend = {
+    labels: ["الأسبوع 1", "الأسبوع 2", "الأسبوع 3", "الأسبوع 4"],
+    datasets: [
+      {
+        label: "عالي",
+        data: [3, 5, 4, 6],
+        borderColor: "#EF4444",
+        backgroundColor: "rgba(239, 68, 68, 0.1)",
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: "متوسط",
+        data: [5, 7, 6, 8],
+        borderColor: "#F59E0B",
+        backgroundColor: "rgba(245, 158, 11, 0.1)",
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: "منخفض",
+        data: [8, 6, 9, 7],
+        borderColor: "#10B981",
+        backgroundColor: "rgba(16, 185, 129, 0.1)",
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+        labels: { color: "#C9A227", font: { family: "Tajawal" } },
+      },
+    },
+    scales: {
+      x: {
+        ticks: { color: "#C9A227" },
+        grid: { color: "rgba(201, 162, 39, 0.1)" },
+      },
+      y: {
+        ticks: { color: "#C9A227" },
+        grid: { color: "rgba(201, 162, 39, 0.1)" },
+      },
+    },
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "right" as const,
+        labels: { color: "#C9A227", font: { family: "Tajawal" } },
+      },
+    },
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
       <PageHeader title="لوحة التحكم" subtitle="نظرة عامة على جميع العمليات" />
 
-      {/* الإحصائيات */}
+      {/* الإحصائيات القديمة */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8">
         {stats.map((stat, i) => (
           <Link key={i} href={stat.href}>
@@ -47,7 +171,7 @@ export default function DashboardPage() {
       </div>
 
       {/* صف ثاني: التنبيهات + المخطط السريع */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* التنبيهات */}
         <Card className="lg:col-span-1">
           <div className="flex items-center gap-2 mb-4">
@@ -89,6 +213,40 @@ export default function DashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* ✅ الجديد: الرسوم البيانية */}
+      {mounted && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <Card>
+            <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>
+              البلاغات الشهرية
+            </h3>
+            <div className="h-64">
+              <Bar data={monthlyData} options={chartOptions} />
+            </div>
+          </Card>
+
+          <Card>
+            <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>
+              توزيع الفئات
+            </h3>
+            <div className="h-64">
+              <Doughnut data={categoryData} options={doughnutOptions} />
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {mounted && (
+        <Card>
+          <h3 className="text-lg font-bold text-[#2C1810] mb-4" style={{ fontFamily: "Tajawal, sans-serif" }}>
+            اتجاه الأولويات
+          </h3>
+          <div className="h-64">
+            <Line data={priorityTrend} options={chartOptions} />
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

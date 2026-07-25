@@ -1,137 +1,99 @@
-import { NextRequest } from "next/server";
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
-import { ReportCategory, Priority } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
 
-function classifyMessage(body: string): { category: ReportCategory; priority: Priority; title: string } {
-  const lower = body.toLowerCase();
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "ayla_verify_2026";
 
-  let category: ReportCategory = 'OTHER';
-  let priority: Priority = 'MEDIUM';
-  let title = 'بلاغ صيانة جديد';
+// ✅ GET — للتحقق من Meta
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const mode = searchParams.get("hub.mode");
+  const token = searchParams.get("hub.verify_token");
+  const challenge = searchParams.get("hub.challenge");
 
-  if (lower.includes('كهرباء') || lower.includes('كهربائي') || lower.includes('لمبة') || lower.includes('فيش') || lower.includes('كهرب')) {
-    category = 'ELECTRICAL'; title = 'عطل كهربائي';
-  } else if (lower.includes('سباكة') || lower.includes('ماء') || lower.includes('تسرب') || lower.includes('صرف')) {
-    category = 'PLUMBING'; title = 'مشكلة سباكة';
-  } else if (lower.includes('تكييف') || lower.includes('مكيف') || lower.includes('تبريد')) {
-    category = 'HVAC'; title = 'عطل تكييف';
-  } else if (lower.includes('نجارة') || lower.includes('باب') || lower.includes('شباك') || lower.includes('خشب')) {
-    category = 'CARPENTRY'; title = 'مشكلة نجارة';
-  } else if (lower.includes('دهان') || lower.includes('طلاء') || lower.includes('صبغ')) {
-    category = 'PAINTING'; title = 'طلب دهان';
-  } else if (lower.includes('تنظيف') || lower.includes('نظافة')) {
-    category = 'CLEANING'; title = 'طلب تنظيف';
-  } else if (lower.includes('أمن') || lower.includes('كاميرا') || lower.includes('حماية')) {
-    category = 'SECURITY'; title = 'مشكلة أمنية';
-  } else if (lower.includes('كمبيوتر') || lower.includes('شبكة') || lower.includes('واي فاي') || lower.includes('wifi')) {
-    category = 'IT'; title = 'مشكلة IT';
-  } else if (lower.includes('أثاث') || lower.includes('مكتب') || lower.includes('كرسي')) {
-    category = 'FURNITURE'; title = 'مشكلة أثاث';
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("✅ Webhook verified");
+    return new NextResponse(challenge, { status: 200 });
   }
 
-  if (lower.includes('عاجل') || lower.includes('urgent') || lower.includes('طارئ') || lower.includes('خطير')) {
-    priority = 'URGENT';
-  } else if (lower.includes('عالي') || lower.includes('high') || lower.includes('مهم')) {
-    priority = 'HIGH';
-  } else if (lower.includes('منخفض') || lower.includes('low') || lower.includes('بسيط')) {
-    priority = 'LOW';
-  }
-
-  return { category, priority, title };
+  return NextResponse.json({ error: "Verification failed" }, { status: 403 });
 }
 
-export async function POST(request: Request) {
+// ✅ POST — استقبال الرسائل
+export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const from = (formData.get('From') as string)?.replace('whatsapp:', '');
-    const body = (formData.get('Body') as string)?.trim();
-    const to = (formData.get('To') as string)?.replace('whatsapp:', '');
-    const mediaUrl = formData.get('MediaUrl0') as string | null;
+    const body = await request.json();
+    console.log("📩 WhatsApp Webhook:", JSON.stringify(body, null, 2));
 
-    if (!from || !body) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    const entry = body.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const value = changes?.value;
+    const messages = value?.messages;
+
+    if (!messages || messages.length === 0) {
+      return NextResponse.json({ status: "no_messages" }, { status: 200 });
     }
 
-    const school = await prisma.school.findFirst({
-      where: {
-        OR: [
-          { phone: from },
-          { whatsappNo: from },
-        ],
-      },
-    });
+    const msg = messages[0];
+    const from = msg.from;
+    const text = msg.text?.body || "";
+    const name = msg.contacts?.[0]?.profile?.name || "غير معروف";
 
-    const classification = classifyMessage(body);
+    // 🔥 كشف البلاغ تلقائياً
+    const keywords = ["عطل", "مكيف", "تسرب", "كهرباء", "سباكة", "إنارة", "باب", "شباك", "مكسور", "لا يعمل"];
+    const isReport = keywords.some((k) => text.includes(k));
 
-    // ✅ FIX: Handle Json field properly - use Prisma.JsonNull or undefined
-    const reportData: any = {
-      reportNo: `REP-${Date.now()}`,
-      title: classification.title,
-      description: body,
-      category: classification.category,
-      priority: classification.priority,
-      status: 'PENDING',
-      senderPhone: from,
-      senderName: school?.name || 'غير معروف',
-      senderType: 'WHATSAPP_SCHOOL',
-      schoolId: school?.id || null,
-    };
-
-    // Only add images if mediaUrl exists
-    if (mediaUrl) {
-      reportData.images = [mediaUrl];
-    }
-
-    const report = await prisma.report.create({
-      data: reportData,
-      include: {
-        school: true,
-      },
-    });
-
-    await prisma.message.create({
-      data: {
-        reportId: report.id,
-        from: from,
-        to: to || '',
-        content: body,
-        type: mediaUrl ? 'IMAGE' : 'TEXT',
-        mediaUrl: mediaUrl || null,
-      },
-    });
-
-    if (school) {
-      const schoolSupervisor = await prisma.schoolSupervisor.findFirst({
-        where: { schoolId: school.id },
-        include: { supervisor: true },
+    if (isReport) {
+      // حفظ البلاغ (مؤقتاً في localStorage أو يمكن ربطه بـ Prisma لاحقاً)
+      const reports = JSON.parse(localStorage.getItem("whatsapp_reports") || "[]");
+      reports.unshift({
+        id: `wa-${Date.now()}`,
+        from,
+        name,
+        text,
+        createdAt: new Date().toISOString(),
+        status: "NEW",
       });
+      localStorage.setItem("whatsapp_reports", JSON.stringify(reports));
 
-      if (schoolSupervisor) {
-        await prisma.report.update({
-          where: { id: report.id },
-          data: {
-            supervisorId: schoolSupervisor.supervisorId,
-            status: 'ASSIGNED',
-            assignedAt: new Date(),
-          },
-        });
-      }
+      // إرسال تأكيد للمدرسة
+      await sendWhatsAppMessage(from, `✅ تم استلام بلاغك: "${text}"\nسيتم توجيه فني في أقرب وقت.`);
+    } else {
+      // رد تلقائي إرشادي
+      await sendWhatsAppMessage(from, `👋 مرحباً ${name}!\nارسل وصف العطل (مثال: عطل مكيف في غرفة 101)`);
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'تم استلام البلاغ بنجاح',
-      report_id: report.id,
-      report_no: report.reportNo,
-      category: classification.category,
-      priority: classification.priority,
+    return NextResponse.json({ status: "ok" }, { status: 200 });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return NextResponse.json({ status: "error" }, { status: 200 });
+  }
+}
+
+// دالة مساعدة لإرسال رسائل واتساب
+async function sendWhatsAppMessage(to: string, message: string) {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!token || !phoneId) {
+    console.log("⚠️ WhatsApp credentials missing — message not sent");
+    return;
+  }
+
+  try {
+    await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to,
+        type: "text",
+        text: { body: message },
+      }),
     });
-  } catch (error: any) {
-    console.error('Webhook error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (e) {
+    console.error("Failed to send WhatsApp message:", e);
   }
 }

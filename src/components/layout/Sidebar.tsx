@@ -1,127 +1,134 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import Link from "next/link";
 import {
   LayoutDashboard,
-  Folder,
-  Building2,
-  Users,
-  Package,
-  Truck,
-  Wallet,
-  Calendar,
-  FileText,
-  AlertTriangle,
-  Wrench,
-  Settings,
-  Menu,
-  X,
+  ClipboardList,
+  ChevronDown,
   ChevronLeft,
-  LogOut,
+  Bot,
+  Inbox,
+  History,
+  Users,
+  Settings,
+  Wrench,
 } from "lucide-react";
-import NotificationBell from "@/components/notifications/NotificationBell";
 
-const menuItems = [
-  { title: "الرئيسية", href: "/", icon: LayoutDashboard },
-  { title: "المشاريع", href: "/projects", icon: Folder },
-  { title: "المدارس", href: "/schools", icon: Building2 },
-  { title: "القوى العاملة", href: "/workforce", icon: Users },
-  { title: "الفرق", href: "/teams", icon: Users },
-  { title: "المخازن", href: "/inventory", icon: Package },
-  { title: "المركبات", href: "/vehicles", icon: Truck },
-  { title: "المالية", href: "/finance", icon: Wallet },
-  { title: "الجدولة", href: "/schedule", icon: Calendar },
-  { title: "التقارير", href: "/reports", icon: FileText },
-  { title: "البلاغات", href: "/complaints", icon: AlertTriangle },
-  { title: "الفنيين", href: "/technicians", icon: Wrench },
-  { title: "الإعدادات", href: "/settings", icon: Settings },
+const menu = [
+  { name: "لوحة التحكم", href: "/", icon: LayoutDashboard },
+  {
+    name: "البلاغات",
+    icon: ClipboardList,
+    children: [
+      { name: "البلاغات الواردة", href: "/reports/inbox", icon: Inbox },
+      { name: "التوزيع الذكي", href: "/reports/auto-dispatch", icon: Bot },
+      { name: "سجل البلاغات", href: "/reports/history", icon: History },
+    ],
+  },
+  { name: "الفنيين", href: "/technicians", icon: Users },
+  { name: "الإعدادات", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const [open, setOpen] = useState<Record<string, boolean>>({
+    البلاغات: pathname.startsWith("/reports"),
+  });
 
-  if (pathname?.startsWith("/auth")) {
-    return null;
-  }
+  const toggle = (name: string) =>
+    setOpen((prev) => ({ ...prev, [name]: !prev[name] }));
+
+  // اخفي Sidebar في تطبيق الفني
+  if (pathname.startsWith("/technician-app")) return null;
 
   return (
-    <>
-      {/* زر التنبيهات + القائمة في الجوال */}
-      <div className="fixed top-4 left-4 z-50 flex items-center gap-2">
-        <NotificationBell />
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-lg bg-[#C9A227] text-[#1A0F09] md:hidden"
-        >
-          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+    <aside className="fixed right-0 top-0 h-screen w-64 bg-[#1A0F09] border-l border-[#C9A227]/10 z-40 overflow-y-auto">
+      {/* Logo */}
+      <div className="p-6 border-b border-[#C9A227]/10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#C9A227] flex items-center justify-center">
+            <Wrench className="w-5 h-5 text-[#1A0F09]" />
+          </div>
+          <div>
+            <h1 className="font-bold text-[#C9A227] text-lg">آيلا</h1>
+            <p className="text-[10px] text-[#C9A227]/50">للصيانة</p>
+          </div>
+        </div>
       </div>
 
-      {/* الشريط الجانبي */}
-      <aside
-        className={`fixed right-0 top-0 h-screen w-64 z-40 transform transition-transform duration-300 ease-in-out
-          ${isOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"}
-          bg-[#1A0F09] border-l border-[#C9A227]/20 flex flex-col`}
-      >
-        {/* الشعار */}
-        <div className="p-6 border-b border-[#C9A227]/20">
-          <h1 className="text-xl font-bold text-[#C9A227]" style={{ fontFamily: "var(--font-tajawal), sans-serif" }}>
-            Ayla Maintenance
-          </h1>
-          <p className="text-xs text-[#5C3A2A] mt-1">آيلا للصيانة</p>
-        </div>
+      {/* Nav */}
+      <nav className="p-4 space-y-1">
+        {menu.map((item) => {
+          const Icon = item.icon;
 
-        {/* القائمة */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
-            const isActive = pathname === item.href;
+          if (item.children) {
+            const isOpen = open[item.name];
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
-                  ${isActive 
-                    ? "bg-[#C9A227] text-[#1A0F09]" 
-                    : "text-[#FAF7F2]/70 hover:bg-[#C9A227]/10 hover:text-[#FAF7F2]"
+              <div key={item.name}>
+                <button
+                  onClick={() => toggle(item.name)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition ${
+                    pathname.startsWith("/reports")
+                      ? "bg-[#C9A227]/10 text-[#C9A227]"
+                      : "text-[#C9A227]/60 hover:bg-[#C9A227]/5 hover:text-[#C9A227]"
                   }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.title}</span>
-                {isActive && <ChevronLeft className="w-4 h-4 mr-auto" />}
-              </Link>
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-5 h-5" />
+                    {item.name}
+                  </div>
+                  {isOpen ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronLeft className="w-4 h-4" />
+                  )}
+                </button>
+
+                {isOpen && (
+                  <div className="mr-4 mt-1 space-y-1 border-r-2 border-[#C9A227]/20 pr-3">
+                    {item.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      const active = pathname === child.href;
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition ${
+                            active
+                              ? "bg-[#C9A227]/15 text-[#C9A227] font-bold"
+                              : "text-[#C9A227]/50 hover:text-[#C9A227] hover:bg-[#C9A227]/5"
+                          }`}
+                        >
+                          <ChildIcon className="w-4 h-4" />
+                          {child.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
-          })}
-        </nav>
+          }
 
-        {/* زر الخروج + التوقيع */}
-        <div className="p-4 border-t border-[#C9A227]/20 space-y-3">
-          <button
-            onClick={() => signOut({ callbackUrl: "/auth/login" })}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>تسجيل الخروج</span>
-          </button>
-
-          <p className="text-xs text-[#5C3A2A] text-center pt-2 border-t border-[#C9A227]/10">
-            مسؤول النظام<br/>
-            م. محمد عبد الرحمن
-          </p>
-        </div>
-      </aside>
-
-      {/* خلفية داكنة للجوال */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-    </>
+          const active = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${
+                active
+                  ? "bg-[#C9A227]/10 text-[#C9A227]"
+                  : "text-[#C9A227]/60 hover:bg-[#C9A227]/5 hover:text-[#C9A227]"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              {item.name}
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
   );
 }

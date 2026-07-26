@@ -142,7 +142,6 @@ export default function ReportTemplate({ title, color }: Props) {
           {title}
         </h1>
 
-        {/* أدوات الاستيراد */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 print:hidden">
           <button onClick={() => excelRef.current?.click()} className={`p-4 rounded-2xl border ${c.border} bg-white hover:shadow-md transition flex items-center gap-3`}>
             <div className={`w-10 h-10 rounded-lg ${c.light} flex items-center justify-center`}>
@@ -177,7 +176,6 @@ export default function ReportTemplate({ title, color }: Props) {
           </button>
         </div>
 
-        {/* بيانات Excel */}
         {excelRows.length > 0 && (
           <div className="mb-8 overflow-x-auto">
             <h3 className="font-bold text-[#2C1810] mb-3">بيانات نموذج الإدارة</h3>
@@ -201,7 +199,6 @@ export default function ReportTemplate({ title, color }: Props) {
           </div>
         )}
 
-        {/* إحصائيات */}
         {images.length > 0 && (
           <div className="grid grid-cols-4 gap-3 mb-6 print:hidden">
             <div className={`p-3 rounded-xl ${c.bg} border ${c.border} text-center`}>
@@ -223,7 +220,6 @@ export default function ReportTemplate({ title, color }: Props) {
           </div>
         )}
 
-        {/* معاينة الصور */}
         {images.length > 0 && (
           <div className="mb-8">
             <h3 className="font-bold text-[#2C1810] mb-3">معاينة الصور</h3>
@@ -248,7 +244,6 @@ export default function ReportTemplate({ title, color }: Props) {
           </div>
         )}
 
-        {/* تصدير */}
         {images.length > 0 && (
           <div className="flex gap-3 print:hidden">
             <button onClick={exportCSV} className={`px-6 py-3 rounded-xl ${c.btn} text-white font-bold flex items-center gap-2 transition`}>
@@ -260,7 +255,6 @@ export default function ReportTemplate({ title, color }: Props) {
           </div>
         )}
 
-        {/* منطقة الطباعة */}
         <div className="hidden print:block mt-8">
           <h2 className="text-2xl font-bold text-center mb-6">{title}</h2>
           <div className="grid grid-cols-2 gap-4">

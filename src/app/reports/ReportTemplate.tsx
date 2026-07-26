@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import {
   Upload, FileSpreadsheet, Image as ImageIcon, Sparkles,
   Download, Presentation, Trash2, CheckCircle, AlertTriangle, XCircle, Printer,
-  Link2,
+  Link2, RotateCcw, X,
 } from "lucide-react";
 
 interface Props {
@@ -44,13 +44,15 @@ export default function ReportTemplate({ title, color }: Props) {
   const excelRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
 
-  // ─── ربط ذكي: كل صف بصورتيه ───
+  // ─── ربط ذكي: كل صف بصورتيه (حسب الترتيب) ───
   const linkedRows: LinkedRow[] = useMemo(() => {
     const good = images.filter((i) => i.status !== "bad");
     const before = good.filter((i) => i.type === "before");
     const after = good.filter((i) => i.type === "after");
-    return excelRows.map((row, idx) => ({
-      row,
+    // لو فيه Excel نربط، لو مافي نسوي صف واحد فاضي للصور
+    const rows = excelRows.length > 0 ? excelRows : good.length > 0 ? [[]] : [];
+    return rows.map((row, idx) => ({
+      row: excelRows.length > 0 ? row : [],
       before: before[idx] || null,
       after: after[idx] || null,
     }));
@@ -81,7 +83,7 @@ export default function ReportTemplate({ title, color }: Props) {
       reader.onload = (ev) => {
         const url = ev.target?.result as string;
         const lower = file.name.toLowerCase();
-        const type = lower.includes("after") || lower.includes("بعد") ? "after" : "before";
+        const type = lower.includes("after") || lower.includes("بعد") || lower.includes("2") ? "after" : "before";
         setImages((prev) => [...prev, {
           id: Math.random().toString(36).slice(2),
           url, name: file.name, status: "good", reason: "", type,
@@ -142,12 +144,17 @@ export default function ReportTemplate({ title, color }: Props) {
 
   const removeImage = (id: string) => setImages((prev) => prev.filter((i) => i.id !== id));
 
-  // ─── تصدير Excel ذكي (البيانات + أسماء الصور) ───
+  const clearAll = () => {
+    if (confirm("تأكيد تفريغ كل البيانات والصور؟")) {
+      setExcelRows([]); setHeaders([]); setImages([]);
+    }
+  };
+
   const exportExcel = async () => {
+    if (excelRows.length === 0) { alert("لا توجد بيانات Excel"); return; }
     setExporting("excel");
     try {
       const XLSX = await import("xlsx");
-      // نضيف عمودين جديدين للصور
       const newHeaders = [...headers, "صورة_قبل", "صورة_بعد"];
       const newRows = linkedRows.map((item) => [
         ...item.row,
@@ -159,31 +166,28 @@ export default function ReportTemplate({ title, color }: Props) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "تقرير_ذكي");
       XLSX.writeFile(wb, `${title.replace(/\s/g, "_")}_مربوط.xlsx`);
-    } catch {
-      alert("⚠️ تأكد من تثبيت: npm install xlsx");
-    }
+    } catch { alert("⚠️ تأكد من تثبيت: npm install xlsx"); }
     setExporting(null);
   };
 
-  // ─── تصدير PPT ذكي (كل صف = شريحة) ───
   const exportPPT = async () => {
     const good = images.filter((i) => i.status === "good");
-    if (good.length === 0 && excelRows.length === 0) { alert("لا توجد بيانات"); return; }
+    if (good.length === 0 && excelRows.length === 0) { alert("لا توجد بيانات أو صور"); return; }
     setExporting("ppt");
     try {
+      const body: any = { images: good, title };
+      if (excelRows.length > 0 && linkedRows.length > 0) {
+        body.rows = linkedRows.map((item) => ({
+          data: item.row,
+          headers,
+          before: item.before ? { url: item.before.url, name: item.before.name } : null,
+          after: item.after ? { url: item.after.url, name: item.after.name } : null,
+        }));
+      }
       const res = await fetch("/api/reports/ppt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          images: good,
-          rows: linkedRows.map((item) => ({
-            data: item.row,
-            headers,
-            before: item.before ? { url: item.before.url, name: item.before.name } : null,
-            after: item.after ? { url: item.after.url, name: item.after.name } : null,
-          })),
-          title,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("فشل التوليد");
       const blob = await res.blob();
@@ -191,9 +195,7 @@ export default function ReportTemplate({ title, color }: Props) {
       const link = document.createElement("a");
       link.href = url; link.download = `${title.replace(/\s/g, "_")}.pptx`; link.click();
       URL.revokeObjectURL(url);
-    } catch {
-      alert("⚠️ خطأ في توليد PowerPoint");
-    }
+    } catch { alert("⚠️ خطأ في توليد PowerPoint"); }
     setExporting(null);
   };
 
@@ -203,15 +205,24 @@ export default function ReportTemplate({ title, color }: Props) {
   const badImages = images.filter((i) => i.status === "bad");
   const noteImages = images.filter((i) => i.status === "note");
 
+  const hasData = images.length > 0 || excelRows.length > 0;
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] p-4 lg:p-6 print:p-0 print:bg-white">
       <div className="max-w-7xl mx-auto print:max-w-none">
-        <h1 className="text-2xl lg:text-3xl font-bold text-[#2C1810] mb-6 flex items-center gap-3" style={{ fontFamily: "Tajawal, sans-serif" }}>
-          <FileSpreadsheet className={`w-8 h-8 ${c.text}`} /> {title}
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl lg:text-3xl font-bold text-[#2C1810] flex items-center gap-3" style={{ fontFamily: "Tajawal, sans-serif" }}>
+            <FileSpreadsheet className={`w-8 h-8 ${c.text}`} /> {title}
+          </h1>
+          {hasData && (
+            <button onClick={clearAll} className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 text-sm font-bold flex items-center gap-2 hover:bg-red-100 transition print:hidden">
+              <RotateCcw className="w-4 h-4" /> تفريغ الكل
+            </button>
+          )}
+        </div>
 
         {/* أدوات الاستيراد */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 print:hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 print:hidden">
           <button onClick={() => excelRef.current?.click()} className={`p-4 rounded-2xl border ${c.border} bg-white hover:shadow-md transition flex items-center gap-3`}>
             <div className={`w-10 h-10 rounded-lg ${c.light} flex items-center justify-center`}><Upload className={`w-5 h-5 ${c.text}`} /></div>
             <div className="text-right"><p className="font-bold text-sm">استيراد نموذج Excel</p><p className="text-xs text-gray-500">نموذج إدارة التعليم</p></div>
@@ -240,25 +251,26 @@ export default function ReportTemplate({ title, color }: Props) {
           </div>
         )}
 
-        {/* ─── البطاقات المربوطة (صف + صوره) ─── */}
-        {linkedRows.length > 0 && (
+        {/* ─── البطاقات المربوطة ─── */}
+        {linkedRows.length > 0 && (excelRows.length > 0 || images.length > 0) && (
           <div className="mb-8 space-y-4">
             <h3 className="font-bold text-[#2C1810] mb-3 flex items-center gap-2">
-              <Link2 className="w-5 h-5 text-[#C9A227]" /> البيانات المربوطة بالصور ({linkedRows.length} صف)
+              <Link2 className="w-5 h-5 text-[#C9A227]" /> 
+              {excelRows.length > 0 ? `البيانات المربوطة بالصور (${linkedRows.length} صف)` : `معاينة الصور المرتبة (${linkedRows.length} مجموعة)`}
             </h3>
             <div className="grid gap-4">
               {linkedRows.map((item, idx) => (
                 <div key={idx} className="bg-white rounded-2xl border border-[#C9A227]/10 p-4 shadow-sm">
-                  {/* بيانات الصف */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 text-sm">
-                    {item.row.map((cell: any, j: number) => (
-                      <div key={j} className="bg-[#FAF7F2] rounded-lg p-2">
-                        <span className="text-[10px] text-gray-400 block">{headers[j] || `عمود ${j+1}`}</span>
-                        <span className="font-medium text-[#2C1810]">{cell}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {/* الصور المربوطة */}
+                  {excelRows.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 text-sm">
+                      {item.row.map((cell: any, j: number) => (
+                        <div key={j} className="bg-[#FAF7F2] rounded-lg p-2">
+                          <span className="text-[10px] text-gray-400 block">{headers[j] || `عمود ${j+1}`}</span>
+                          <span className="font-medium text-[#2C1810]">{cell}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex gap-3 flex-wrap">
                     {item.before ? (
                       <div className="relative">
@@ -266,13 +278,13 @@ export default function ReportTemplate({ title, color }: Props) {
                         <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded font-bold">قبل</span>
                         {item.before.status === "note" && <span className="absolute bottom-1 right-1 bg-yellow-500 text-white text-[10px] px-2 py-0.5 rounded">{item.before.reason}</span>}
                       </div>
-                    ) : <div className="w-32 h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-xs">لا توجد صورة قبل</div>}
+                    ) : <div className="w-32 h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-xs border border-dashed">لا توجد صورة قبل</div>}
                     {item.after ? (
                       <div className="relative">
                         <img src={item.after.url} className="w-32 h-32 object-cover rounded-xl border-2 border-green-200" alt="بعد" />
                         <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-2 py-0.5 rounded font-bold">بعد</span>
                       </div>
-                    ) : <div className="w-32 h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-xs">لا توجد صورة بعد</div>}
+                    ) : <div className="w-32 h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-xs border border-dashed">لا توجد صورة بعد</div>}
                   </div>
                 </div>
               ))}
@@ -302,12 +314,20 @@ export default function ReportTemplate({ title, color }: Props) {
           </div>
         )}
 
-        {/* تصدير */}
-        {(images.length > 0 || excelRows.length > 0) && (
-          <div className="flex flex-wrap gap-3 print:hidden">
-            {excelRows.length > 0 && <button onClick={exportExcel} disabled={exporting === "excel"} className={`px-6 py-3 rounded-xl ${c.btn} text-white font-bold flex items-center gap-2 transition disabled:opacity-50`}><FileSpreadsheet className="w-4 h-4" /> {exporting === "excel" ? "جاري التصدير..." : "تصدير Excel مربوط"}</button>}
-            {(images.length > 0 || excelRows.length > 0) && <button onClick={exportPPT} disabled={exporting === "ppt"} className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold flex items-center gap-2 transition disabled:opacity-50"><Presentation className="w-4 h-4" /> {exporting === "ppt" ? "جاري التوليد..." : "تصدير PowerPoint"}</button>}
-            <button onClick={printReport} className="px-6 py-3 rounded-xl bg-[#1A0F09] text-[#C9A227] font-bold flex items-center gap-2 hover:bg-[#2C1810] transition"><Printer className="w-4 h-4" /> طباعة / PDF</button>
+        {/* ─── أزرار التصدير ─── */}
+        {hasData && (
+          <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-6 md:w-auto flex flex-wrap justify-center md:justify-end gap-3 print:hidden z-40">
+            {excelRows.length > 0 && (
+              <button onClick={exportExcel} disabled={exporting === "excel"} className={`px-5 py-3 rounded-xl ${c.btn} text-white font-bold flex items-center gap-2 transition shadow-lg disabled:opacity-50`}>
+                <FileSpreadsheet className="w-4 h-4" /> {exporting === "excel" ? "جاري التصدير..." : "تصدير Excel"}
+              </button>
+            )}
+            <button onClick={exportPPT} disabled={exporting === "ppt"} className="px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold flex items-center gap-2 transition shadow-lg disabled:opacity-50">
+              <Presentation className="w-4 h-4" /> {exporting === "ppt" ? "جاري التوليد..." : "تصدير PowerPoint"}
+            </button>
+            <button onClick={printReport} className="px-5 py-3 rounded-xl bg-[#1A0F09] text-[#C9A227] font-bold flex items-center gap-2 hover:bg-[#2C1810] transition shadow-lg">
+              <Printer className="w-4 h-4" /> طباعة
+            </button>
           </div>
         )}
 
@@ -316,11 +336,13 @@ export default function ReportTemplate({ title, color }: Props) {
           <h2 className="text-2xl font-bold text-center mb-6">{title}</h2>
           {linkedRows.map((item, idx) => (
             <div key={idx} className="mb-6 border-b pb-4">
-              <table className="w-full text-sm mb-3"><tbody>
-                {item.row.map((cell: any, j: number) => (
-                  <tr key={j}><td className="font-bold w-32">{headers[j]}</td><td>{cell}</td></tr>
-                ))}
-              </tbody></table>
+              {excelRows.length > 0 && (
+                <table className="w-full text-sm mb-3"><tbody>
+                  {item.row.map((cell: any, j: number) => (
+                    <tr key={j}><td className="font-bold w-32">{headers[j]}</td><td>{cell}</td></tr>
+                  ))}
+                </tbody></table>
+              )}
               <div className="flex gap-3">
                 {item.before && <div><p className="text-xs font-bold mb-1">قبل:</p><img src={item.before.url} className="w-48 h-48 object-cover rounded" /></div>}
                 {item.after && <div><p className="text-xs font-bold mb-1">بعد:</p><img src={item.after.url} className="w-48 h-48 object-cover rounded" /></div>}
@@ -328,6 +350,9 @@ export default function ReportTemplate({ title, color }: Props) {
             </div>
           ))}
         </div>
+
+        {/* Spacer for fixed buttons */}
+        {hasData && <div className="h-24 print:hidden" />}
       </div>
     </div>
   );

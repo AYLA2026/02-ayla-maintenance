@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Briefcase, School, Car, Users, DollarSign, Package,
   FileText, ClipboardList, Wrench, Settings, Bell,
@@ -42,16 +42,20 @@ const bottomLinks = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(pathname?.startsWith("/reports"));
   const [complaintsOpen, setComplaintsOpen] = useState(pathname?.startsWith("/complaints"));
 
+  useEffect(() => setIsOpen(false), [pathname]);
+
   if (pathname?.startsWith("/auth") || pathname?.startsWith("/technician-app")) return null;
 
-  const NavLink = ({ href, label, icon: Icon, isSub }: any) => {
+  const NavLink = ({ href, label, icon: Icon, isSub, onClick }: any) => {
     const active = pathname === href || (href !== "/" && pathname?.startsWith(href));
     return (
       <Link
         href={href}
+        onClick={onClick}
         className={`group flex items-center gap-3 rounded-xl transition-all duration-200 ${
           isSub ? "mr-3 pr-3 py-2 text-xs" : "px-4 py-3 text-sm"
         } ${
@@ -69,25 +73,60 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="fixed right-0 top-0 h-screen w-64 bg-[#1A0F09] border-l border-[#C9A227]/10 z-50 flex flex-col overflow-hidden">
-        <div className="p-5 border-b border-[#C9A227]/10 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C9A227] flex items-center justify-center shadow-lg shadow-[#C9A227]/20">
-              <Wrench className="w-5 h-5 text-[#1A0F09]" />
+      {/* Top Bar */}
+      <header className="fixed top-0 right-0 left-0 h-16 bg-[#1A0F09] border-b border-[#C9A227]/10 z-50 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          {/* Hamburger */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-lg hover:bg-[#C9A227]/10 transition active:scale-95"
+            aria-label="القائمة"
+          >
+            <div className="space-y-1">
+              <div className="w-6 h-0.5 bg-[#C9A227] rounded-full" />
+              <div className="w-6 h-0.5 bg-[#C9A227] rounded-full" />
+              <div className="w-6 h-0.5 bg-[#C9A227] rounded-full" />
             </div>
-            <div>
-              <h1 className="font-bold text-[#C9A227] text-lg leading-tight">آيلا</h1>
-              <p className="text-[10px] text-[#C9A227]/40">للصيانة</p>
-            </div>
-          </div>
+          </button>
+          {/* Bell */}
+          <button className="p-2 rounded-lg hover:bg-[#C9A227]/10 transition relative">
+            <Bell className="w-5 h-5 text-[#C9A227]" />
+            <span className="absolute top-1 left-1 w-2 h-2 rounded-full bg-red-500 animate-ping" />
+          </button>
         </div>
 
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-[#C9A227] flex items-center justify-center shadow-lg shadow-[#C9A227]/20">
+            <Wrench className="w-4 h-4 text-[#1A0F09]" />
+          </div>
+          <div>
+            <h1 className="font-bold text-[#C9A227] text-sm leading-tight">آيلا</h1>
+            <p className="text-[8px] text-[#C9A227]/40">للصيانة</p>
+          </div>
+        </div>
+      </header>
+
+      {/* Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Panel */}
+      <aside
+        className={`fixed top-16 right-0 bottom-0 w-64 bg-[#1A0F09] border-l border-[#C9A227]/10 z-50 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } flex flex-col overflow-hidden`}
+      >
         <nav className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0">
           {mainLinks.map((link) => (
-            <NavLink key={link.href} {...link} />
+            <NavLink key={link.href} {...link} onClick={() => setIsOpen(false)} />
           ))}
 
-          {/* قسم التقارير */}
+          {/* التقارير */}
           <div className="pt-2">
             <button
               onClick={() => setReportsOpen(!reportsOpen)}
@@ -102,13 +141,13 @@ export default function Sidebar() {
             {reportsOpen && (
               <div className="mr-2 mt-1 space-y-1 border-r-2 border-[#C9A227]/10 pr-2">
                 {reportLinks.map((link) => (
-                  <NavLink key={link.href} {...link} isSub />
+                  <NavLink key={link.href} {...link} isSub onClick={() => setIsOpen(false)} />
                 ))}
               </div>
             )}
           </div>
 
-          {/* قسم البلاغات — للمرحلة القادمة */}
+          {/* البلاغات */}
           <div className="pt-2 border-t border-[#C9A227]/5">
             <button
               onClick={() => setComplaintsOpen(!complaintsOpen)}
@@ -123,7 +162,7 @@ export default function Sidebar() {
             {complaintsOpen && (
               <div className="mr-2 mt-1 space-y-1 border-r-2 border-[#C9A227]/10 pr-2">
                 {complaintLinks.map((link) => (
-                  <NavLink key={link.href} {...link} isSub />
+                  <NavLink key={link.href} {...link} isSub onClick={() => setIsOpen(false)} />
                 ))}
               </div>
             )}
@@ -131,20 +170,14 @@ export default function Sidebar() {
 
           <div className="pt-2 border-t border-[#C9A227]/5 mt-2">
             {bottomLinks.map((link) => (
-              <NavLink key={link.href} {...link} />
+              <NavLink key={link.href} {...link} onClick={() => setIsOpen(false)} />
             ))}
           </div>
         </nav>
-
-        <div className="p-3 border-t border-[#C9A227]/10 shrink-0">
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-[#C9A227]/5 border border-[#C9A227]/10 text-[#C9A227] hover:bg-[#C9A227]/10 transition active:scale-95">
-            <Bell className="w-5 h-5 shrink-0" />
-            <span className="text-sm font-bold flex-1 text-right">التنبيهات</span>
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-          </button>
-        </div>
       </aside>
-      <div className="hidden lg:block w-64 shrink-0" />
+
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
     </>
   );
 }

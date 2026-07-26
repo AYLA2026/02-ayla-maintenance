@@ -1,192 +1,245 @@
 "use client";
 
-import PageHeader from "@/components/layout/PageHeader";
-import Card from "@/components/layout/Card";
-import StatCard from "@/components/layout/StatCard";
-import { Truck, Fuel, Wrench, AlertTriangle, Plus, Download, Upload, X } from "lucide-react";
-import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
+import {
+  Upload, Search, Car, Plus, X, Download, Trash2, Filter
+} from "lucide-react";
 
 interface Vehicle {
+  id: string;
   plate: string;
   type: string;
+  model: string;
+  year: string;
   driver: string;
-  status: string;
-  fuel: number;
-  lastMaint: string;
+  status: "نشط" | "صيانة" | "متوقف";
 }
 
+const exportWithHeader = async (data: any[][], filename: string, sheetName: string) => {
+  const XLSX = await import("xlsx");
+  const headerRows = [
+    ["Ayla Maintenance"],
+    ["م. محمد عبد الرحمن"],
+    [new Date().toLocaleDateString("ar-SA")],
+    [],
+  ];
+  const allRows = [...headerRows, ...data];
+  const ws = XLSX.utils.aoa_to_sheet(allRows);
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: data[0].length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: data[0].length - 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: data[0].length - 1 } },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, filename);
+};
+
 export default function VehiclesPage() {
-  const [showImportModal, setShowImportModal] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("الكل");
+  const [showAdd, setShowAdd] = useState(false);
+  const excelRef = useRef<HTMLInputElement>(null);
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    { plate: "أ ب ج 1234", type: "بيك أب", driver: "أحمد محمد", status: "متاح", fuel: 85, lastMaint: "2026/06/15" },
-    { plate: "أ ب ج 5678", type: "فان", driver: "خالد عبدالله", status: "مشغول", fuel: 45, lastMaint: "2026/07/01" },
-    { plate: "أ ب ج 9012", type: "سطحه", driver: "سعد إبراهيم", status: "صيانة", fuel: 20, lastMaint: "2026/05/20" },
-    { plate: "أ ب ج 3456", type: "بيك أب", driver: "محمد سالم", status: "متاح", fuel: 90, lastMaint: "2026/07/10" },
-  ]);
+  const [form, setForm] = useState({
+    plate: "", type: "", model: "", year: "", driver: "", status: "نشط" as Vehicle["status"]
+  });
 
-  const exportExcel = () => {
-    const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(
-      "اللوحة,النوع,السائق,الحالة,الوقود,آخر صيانة\n" +
-      vehicles.map(v => `${v.plate},${v.type},${v.driver},${v.status},${v.fuel},${v.lastMaint}`).join("\n")
-    )}`;
-    const link = document.createElement("a");
-    link.href = csvContent;
-    link.download = "المركبات_2026.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
-
-  const closeModal = () => setShowImportModal(false);
-
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      try {
-        const lines = content.trim().split("\n");
-        const newVehicles: Vehicle[] = [];
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(",");
-          if (cols.length >= 6) {
-            newVehicles.push({
-              plate: cols[0]?.trim() || "",
-              type: cols[1]?.trim() || "غير محدد",
-              driver: cols[2]?.trim() || "غير محدد",
-              status: cols[3]?.trim() || "متاح",
-              fuel: parseInt(cols[4]?.trim()) || 0,
-              lastMaint: cols[5]?.trim() || new Date().toISOString().split("T")[0].replace(/-/g, "/"),
-            });
-          }
-        }
-        if (newVehicles.length > 0) {
-          setVehicles(prev => [...prev, ...newVehicles]);
-          alert(`✅ تم استيراد ${newVehicles.length} مركبة بنجاح!`);
-        }
-      } catch (err) {
-        alert("⚠️ خطأ في قراءة الملف.");
-      }
-      setShowImportModal(false);
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "متاح": return "bg-green-100 text-green-800";
-      case "مشغول": return "bg-yellow-100 text-yellow-800";
-      case "صيانة": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+    try {
+      const buf = await file.arrayBuffer();
+      const XLSX = await import("xlsx");
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+      const rows = data.slice(1);
+      const imported: Vehicle[] = rows.map((row, idx) => ({
+        id: `veh-${Date.now()}-${idx}`,
+        plate: String(row[0] || ""),
+        type: String(row[1] || ""),
+        model: String(row[2] || ""),
+        year: String(row[3] || ""),
+        driver: String(row[4] || ""),
+        status: (["نشط", "صيانة", "متوقف"].includes(row[5]) ? row[5] : "نشط") as Vehicle["status"],
+      })).filter((v) => v.plate.trim());
+      setVehicles((prev) => [...prev, ...imported]);
+    } catch {
+      alert("⚠️ تأكد من تثبيت: npm install xlsx");
     }
   };
 
+  const addManual = () => {
+    if (!form.plate.trim()) return alert("رقم اللوحة مطلوب");
+    setVehicles((prev) => [...prev, { ...form, id: `veh-${Date.now()}` }]);
+    setForm({ plate: "", type: "", model: "", year: "", driver: "", status: "نشط" });
+    setShowAdd(false);
+  };
+
+  const exportExcel = async () => {
+    if (vehicles.length === 0) return;
+    const headers = [["رقم اللوحة", "النوع", "الموديل", "السنة", "السائق", "الحالة"]];
+    const rows = vehicles.map((v) => [v.plate, v.type, v.model, v.year, v.driver, v.status]);
+    await exportWithHeader([...headers, ...rows], "المركبات_آيلا.xlsx", "المركبات");
+  };
+
+  const filtered = useMemo(() => {
+    return vehicles.filter((v) => {
+      const q = search.trim();
+      const matchSearch = !q || v.plate.includes(q) || v.driver.includes(q) || v.type.includes(q);
+      const matchStatus = filterStatus === "الكل" || v.status === filterStatus;
+      return matchSearch && matchStatus;
+    });
+  }, [vehicles, search, filterStatus]);
+
+  const stats = {
+    total: vehicles.length,
+    active: vehicles.filter((v) => v.status === "نشط").length,
+    maintenance: vehicles.filter((v) => v.status === "صيانة").length,
+    stopped: vehicles.filter((v) => v.status === "متوقف").length,
+  };
+
+  const statusColor = (s: string) => {
+    if (s === "نشط") return "bg-green-50 text-green-700 border-green-200";
+    if (s === "صيانة") return "bg-yellow-50 text-yellow-700 border-yellow-200";
+    return "bg-red-50 text-red-700 border-red-200";
+  };
+
   return (
-    <div className="p-8 min-h-screen" style={{ background: "linear-gradient(135deg, #FAF7F2 0%, #F5E6D3 100%)" }}>
-      <input type="file" ref={fileInputRef} accept=".csv,.xlsx" className="hidden" onChange={handleFileImport} />
-
-      <div className="flex items-center justify-between mb-8">
-        <PageHeader title="المركبات" subtitle="إدارة المركبات والصيانة" />
-        <div className="flex gap-2">
-          <button onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
-            <Upload className="w-4 h-4" /> استيراد
-          </button>
-          <button onClick={exportExcel}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#5C3A2A] text-sm border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">
-            <Download className="w-4 h-4" /> تصدير
-          </button>
-          <Link href="/vehicles/new"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#1A0F09] font-medium text-sm"
-            style={{ background: "linear-gradient(135deg, #C9A227 0%, #E8D5A3 100%)" }}>
-            <Plus className="w-4 h-4" /> مركبة جديدة
-          </Link>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard title="إجمالي المركبات" value={vehicles.length.toString()} icon={Truck} delay={0} />
-        <StatCard title="المتاحة" value={vehicles.filter(v => v.status === "متاح").length.toString()} icon={Fuel} delay={0.1} />
-        <StatCard title="في الصيانة" value={vehicles.filter(v => v.status === "صيانة").length.toString()} icon={Wrench} delay={0.2} />
-        <StatCard title="تحتاج صيانة" value={vehicles.filter(v => v.fuel < 25).length.toString()} icon={AlertTriangle} delay={0.3} />
-      </div>
-
-      <Card>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>قائمة المركبات</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#C9A227]/20">
-                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">اللوحة</th>
-                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">النوع</th>
-                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">السائق</th>
-                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">الحالة</th>
-                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">الوقود %</th>
-                <th className="text-right py-3 px-4 text-sm font-bold text-[#2C1810]">آخر صيانة</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vehicles.map((vehicle, i) => (
-                <tr key={i} className="border-b border-[#C9A227]/10 hover:bg-[#C9A227]/5 transition-colors">
-                  <td className="py-4 px-4 font-bold text-[#2C1810] font-mono">{vehicle.plate}</td>
-                  <td className="py-4 px-4 text-[#5C3A2A]">{vehicle.type}</td>
-                  <td className="py-4 px-4 text-[#2C1810]">{vehicle.driver}</td>
-                  <td className="py-4 px-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(vehicle.status)}`}>
-                      {vehicle.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 rounded-full bg-gray-200 overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${vehicle.fuel}%`, background: vehicle.fuel < 25 ? "#ef4444" : vehicle.fuel < 50 ? "#eab308" : "#22c55e" }} />
-                      </div>
-                      <span className="text-xs text-[#5C3A2A]">{vehicle.fuel}%</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-[#5C3A2A]">{vehicle.lastMaint}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
-          <div className="relative w-full max-w-md mx-4 rounded-2xl p-6"
-            style={{ background: "linear-gradient(145deg, #FAF7F2 0%, #F5E6D3 100%)", border: "1px solid rgba(201, 162, 39, 0.15)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#2C1810]" style={{ fontFamily: "Tajawal, sans-serif" }}>استيراد المركبات</h3>
-              <button onClick={closeModal} className="text-[#5C3A2A] hover:text-[#2C1810]"><X className="w-5 h-5" /></button>
-            </div>
-            <p className="text-sm text-[#5C3A2A] mb-4">
-              اختر ملف CSV يحتوي على بيانات المركبات:
-            </p>
-            <div className="bg-white/50 rounded-lg p-3 mb-4 text-xs text-[#5C3A2A] font-mono border border-[#C9A227]/20">
-              اللوحة,النوع,السائق,الحالة,الوقود,آخر صيانة<br/>
-              أ ب ج 1234,بيك أب,أحمد محمد,متاح,85,2026/06/15
-            </div>
-            <button type="button" onClick={openFilePicker}
-              className="w-full border-2 border-dashed border-[#C9A227]/30 rounded-xl p-8 text-center mb-4 hover:bg-[#C9A227]/5 transition-colors cursor-pointer">
-              <Upload className="w-10 h-10 text-[#C9A227] mx-auto mb-2" />
-              <p className="text-sm text-[#5C3A2A]">اضغط هنا لاختيار ملف CSV</p>
-              <p className="text-xs text-[#C9A227]/60 mt-1">CSV فقط</p>
+    <div className="min-h-screen bg-[#FAF7F2] p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h1 className="text-2xl lg:text-3xl font-bold text-[#2C1810] flex items-center gap-3" style={{ fontFamily: "Tajawal, sans-serif" }}>
+            <Car className="w-8 h-8 text-[#C9A227]" /> إدارة المركبات
+          </h1>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => excelRef.current?.click()} className="px-4 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm flex items-center gap-2 hover:bg-[#b89420] transition">
+              <Upload className="w-4 h-4" /> استيراد Excel
             </button>
-            <button type="button" onClick={closeModal}
-              className="w-full py-2 rounded-lg text-sm font-medium text-[#5C3A2A] border border-[#C9A227]/30 hover:bg-[#C9A227]/10 transition-colors">إلغاء</button>
+            <input ref={excelRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcel} />
+            <button onClick={() => setShowAdd(true)} className="px-4 py-2 rounded-xl bg-[#1A0F09] text-[#C9A227] font-bold text-sm flex items-center gap-2 hover:bg-[#2C1810] transition">
+              <Plus className="w-4 h-4" /> إضافة مركبة
+            </button>
+            {vehicles.length > 0 && (
+              <>
+                <button onClick={exportExcel} className="px-4 py-2 rounded-xl bg-green-600 text-white font-bold text-sm flex items-center gap-2 hover:bg-green-700 transition">
+                  <Download className="w-4 h-4" /> تصدير
+                </button>
+                <button onClick={() => confirm("تأكيد الحذف؟") && setVehicles([])} className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold text-sm flex items-center gap-2 hover:bg-red-100 transition">
+                  <Trash2 className="w-4 h-4" /> تفريغ
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {vehicles.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div className="p-4 rounded-2xl bg-white border border-[#C9A227]/10 text-center">
+              <div className="text-3xl font-bold text-[#C9A227]">{stats.total}</div>
+              <div className="text-xs text-gray-500 mt-1">إجمالي المركبات</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-green-200 text-center">
+              <div className="text-3xl font-bold text-green-600">{stats.active}</div>
+              <div className="text-xs text-gray-500 mt-1">نشطة</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-yellow-200 text-center">
+              <div className="text-3xl font-bold text-yellow-600">{stats.maintenance}</div>
+              <div className="text-xs text-gray-500 mt-1">في الصيانة</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-red-200 text-center">
+              <div className="text-3xl font-bold text-red-600">{stats.stopped}</div>
+              <div className="text-xs text-gray-500 mt-1">متوقفة</div>
+            </div>
+          </div>
+        )}
+
+        {vehicles.length > 0 && (
+          <div className="bg-white rounded-2xl border border-[#C9A227]/10 p-4 mb-6 flex flex-wrap gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث برقم اللوحة أو السائق..." className="w-full pr-9 pl-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+            </div>
+            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
+              <option value="الكل">كل الحالات</option>
+              <option value="نشط">نشط</option>
+              <option value="صيانة">صيانة</option>
+              <option value="متوقف">متوقف</option>
+            </select>
+          </div>
+        )}
+
+        {vehicles.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-[#C9A227]/10 p-12 text-center">
+            <Car className="w-16 h-16 text-[#C9A227]/20 mx-auto mb-4" />
+            <p className="text-gray-500 mb-4">لا توجد مركبات مسجلة</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => excelRef.current?.click()} className="px-6 py-3 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold hover:bg-[#b89420] transition">استيراد من Excel</button>
+              <button onClick={() => setShowAdd(true)} className="px-6 py-3 rounded-xl bg-[#1A0F09] text-[#C9A227] font-bold hover:bg-[#2C1810] transition">إضافة يدوية</button>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-[#C9A227]/10 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[#FAF7F2]">
+                  <tr>
+                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">#</th>
+                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">رقم اللوحة</th>
+                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">النوع</th>
+                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">الموديل</th>
+                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">السنة</th>
+                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">السائق</th>
+                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">الحالة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((v, i) => (
+                    <tr key={v.id} className="border-t border-[#C9A227]/5 hover:bg-[#FAF7F2]/50 transition">
+                      <td className="px-4 py-3 text-gray-400">{i + 1}</td>
+                      <td className="px-4 py-3 font-bold text-[#2C1810]">{v.plate}</td>
+                      <td className="px-4 py-3 text-gray-600">{v.type}</td>
+                      <td className="px-4 py-3 text-gray-600">{v.model}</td>
+                      <td className="px-4 py-3 text-gray-600">{v.year}</td>
+                      <td className="px-4 py-3 text-gray-600">{v.driver}</td>
+                      <td className="px-4 py-3"><span className={`px-2 py-1 rounded-lg text-xs font-bold border ${statusColor(v.status)}`}>{v.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="p-3 border-t border-[#C9A227]/10 text-xs text-gray-500 text-center">
+              عرض {filtered.length} من {vehicles.length} مركبة
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showAdd && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAdd(false)}>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-[#2C1810]">إضافة مركبة جديدة</h2>
+              <button onClick={() => setShowAdd(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-500" /></button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input placeholder="رقم اللوحة *" value={form.plate} onChange={(e) => setForm({ ...form, plate: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+              <input placeholder="نوع المركبة" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+              <input placeholder="الموديل" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+              <input placeholder="السنة" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+              <input placeholder="اسم السائق" value={form.driver} onChange={(e) => setForm({ ...form, driver: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Vehicle["status"] })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
+                <option value="نشط">نشط</option>
+                <option value="صيانة">صيانة</option>
+                <option value="متوقف">متوقف</option>
+              </select>
+            </div>
+            <div className="mt-6 flex gap-3 justify-end">
+              <button onClick={() => setShowAdd(false)} className="px-5 py-2 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition">إلغاء</button>
+              <button onClick={addManual} className="px-5 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition">حفظ المركبة</button>
+            </div>
           </div>
         </div>
       )}

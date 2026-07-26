@@ -1,47 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Briefcase,
+  School,
+  Car,
+  Users,
+  DollarSign,
+  Package,
+  FileText,
   ClipboardList,
-  ChevronDown,
-  ChevronLeft,
+  Wrench,
+  Settings,
   Bot,
   Inbox,
   History,
-  Users,
-  Settings,
-  Wrench,
 } from "lucide-react";
 
-const menu = [
-  { name: "لوحة التحكم", href: "/", icon: LayoutDashboard },
-  {
-    name: "البلاغات",
-    icon: ClipboardList,
-    children: [
-      { name: "البلاغات الواردة", href: "/reports/inbox", icon: Inbox },
-      { name: "التوزيع الذكي", href: "/reports/auto-dispatch", icon: Bot },
-      { name: "سجل البلاغات", href: "/reports/history", icon: History },
-    ],
-  },
-  { name: "الفنيين", href: "/technicians", icon: Users },
-  { name: "الإعدادات", href: "/settings", icon: Settings },
+const links = [
+  { href: "/", label: "الرئيسية", icon: LayoutDashboard },
+  { href: "/projects", label: "المشاريع", icon: Briefcase },
+  { href: "/schools", label: "المدارس", icon: School },
+  { href: "/vehicles", label: "السيارات", icon: Car },
+  { href: "/employees", label: "القوى العاملة", icon: Users },
+  { href: "/finance", label: "المالية", icon: DollarSign },
+  { href: "/inventory", label: "المخازن", icon: Package },
+  { href: "/reports", label: "التقارير", icon: FileText },
+  { href: "/reports/inbox", label: "البلاغات الواردة", icon: Inbox },
+  { href: "/reports/auto-dispatch", label: "التوزيع الذكي", icon: Bot },
+  { href: "/reports/history", label: "سجل البلاغات", icon: History },
+  { href: "/technicians", label: "الفنيين", icon: Wrench },
+  { href: "/settings", label: "الإعدادات", icon: Settings },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [open, setOpen] = useState<Record<string, boolean>>({
-    البلاغات: pathname.startsWith("/reports"),
-  });
 
-  const toggle = (name: string) =>
-    setOpen((prev) => ({ ...prev, [name]: !prev[name] }));
-
-  // اخفي Sidebar في تطبيق الفني
-  if (pathname.startsWith("/technician-app")) return null;
+  // اخفِ Sidebar في تطبيق الفني
+  if (pathname?.startsWith("/technician-app")) return null;
 
   return (
     <aside className="fixed right-0 top-0 h-screen w-64 bg-[#1A0F09] border-l border-[#C9A227]/10 z-40 overflow-y-auto">
@@ -60,71 +58,26 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="p-4 space-y-1">
-        {menu.map((item) => {
-          const Icon = item.icon;
+        {links.map((link) => {
+          const Icon = link.icon;
+          const isSub = link.href.startsWith("/reports/") && link.href !== "/reports";
+          const active =
+            pathname === link.href || pathname?.startsWith(link.href + "/");
 
-          if (item.children) {
-            const isOpen = open[item.name];
-            return (
-              <div key={item.name}>
-                <button
-                  onClick={() => toggle(item.name)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition ${
-                    pathname.startsWith("/reports")
-                      ? "bg-[#C9A227]/10 text-[#C9A227]"
-                      : "text-[#C9A227]/60 hover:bg-[#C9A227]/5 hover:text-[#C9A227]"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5" />
-                    {item.name}
-                  </div>
-                  {isOpen ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronLeft className="w-4 h-4" />
-                  )}
-                </button>
-
-                {isOpen && (
-                  <div className="mr-4 mt-1 space-y-1 border-r-2 border-[#C9A227]/20 pr-3">
-                    {item.children.map((child) => {
-                      const ChildIcon = child.icon;
-                      const active = pathname === child.href;
-                      return (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition ${
-                            active
-                              ? "bg-[#C9A227]/15 text-[#C9A227] font-bold"
-                              : "text-[#C9A227]/50 hover:text-[#C9A227] hover:bg-[#C9A227]/5"
-                          }`}
-                        >
-                          <ChildIcon className="w-4 h-4" />
-                          {child.name}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          }
-
-          const active = pathname === item.href;
           return (
             <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${
+              key={link.href}
+              href={link.href}
+              className={`flex items-center gap-3 rounded-xl text-sm font-bold transition ${
+                isSub ? "mr-4 pr-3 py-2.5" : "px-4 py-3"
+              } ${
                 active
                   ? "bg-[#C9A227]/10 text-[#C9A227]"
                   : "text-[#C9A227]/60 hover:bg-[#C9A227]/5 hover:text-[#C9A227]"
               }`}
             >
-              <Icon className="w-5 h-5" />
-              {item.name}
+              <Icon className={`shrink-0 ${isSub ? "w-4 h-4" : "w-5 h-5"}`} />
+              {link.label}
             </Link>
           );
         })}

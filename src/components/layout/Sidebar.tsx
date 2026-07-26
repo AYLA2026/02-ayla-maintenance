@@ -6,8 +6,8 @@ import { useState } from "react";
 import {
   LayoutDashboard, Briefcase, School, Car, Users, DollarSign, Package,
   FileText, ClipboardList, Wrench, Settings, Bell,
-  ChevronLeft, ChevronDown, Bot, Inbox, History,
-  Sparkles, Wind, Camera, CheckCircle,
+  ChevronLeft, ChevronDown, Sparkles, Wind, Camera, CheckCircle,
+  Inbox, Bot, History,
 } from "lucide-react";
 
 const mainLinks = [
@@ -83,8 +83,11 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0">
-          {mainLinks.map((link) => <NavLink key={link.href} {...link} />)}
+          {mainLinks.map((link) => (
+            <NavLink key={link.href} {...link} />
+          ))}
 
+          {/* قسم التقارير */}
           <div className="pt-2">
             <button
               onClick={() => setReportsOpen(!reportsOpen)}
@@ -98,11 +101,14 @@ export default function Sidebar() {
             </button>
             {reportsOpen && (
               <div className="mr-2 mt-1 space-y-1 border-r-2 border-[#C9A227]/10 pr-2">
-                {reportLinks.map((link) => <NavLink key={link.href} {...link} isSub />)}
+                {reportLinks.map((link) => (
+                  <NavLink key={link.href} {...link} isSub />
+                ))}
               </div>
             )}
           </div>
 
+          {/* قسم البلاغات — للمرحلة القادمة */}
           <div className="pt-2 border-t border-[#C9A227]/5">
             <button
               onClick={() => setComplaintsOpen(!complaintsOpen)}
@@ -116,13 +122,17 @@ export default function Sidebar() {
             </button>
             {complaintsOpen && (
               <div className="mr-2 mt-1 space-y-1 border-r-2 border-[#C9A227]/10 pr-2">
-                {complaintLinks.map((link) => <NavLink key={link.href} {...link} isSub />)}
+                {complaintLinks.map((link) => (
+                  <NavLink key={link.href} {...link} isSub />
+                ))}
               </div>
             )}
           </div>
 
           <div className="pt-2 border-t border-[#C9A227]/5 mt-2">
-            {bottomLinks.map((link) => <NavLink key={link.href} {...link} />)}
+            {bottomLinks.map((link) => (
+              <NavLink key={link.href} {...link} />
+            ))}
           </div>
         </nav>
 

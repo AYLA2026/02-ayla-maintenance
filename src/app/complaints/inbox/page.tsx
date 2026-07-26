@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   Inbox, Plus, X, Download, Upload, Search, Filter,
   AlertCircle, Clock, CheckCircle, UserCheck, Phone,
@@ -101,6 +101,11 @@ const DEFAULT_COMPLAINTS: Complaint[] = [
 
 export default function ComplaintsInboxPage() {
   const [complaints, setComplaints] = useState<Complaint[]>(DEFAULT_COMPLAINTS);
+ useEffect(() => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("ayla_complaints", JSON.stringify(complaints));
+  }
+}, [complaints]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<Status | "الكل">("الكل");
   const [filterPriority, setFilterPriority] = useState<Priority | "الكل">("الكل");

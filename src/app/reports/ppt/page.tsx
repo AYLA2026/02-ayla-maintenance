@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Camera, Sparkles, Download, Trash2, Presentation } from "lucide-react";
 
-export default function PPTReportPage() {
+export default function PPTContent() {
   const [images, setImages] = useState<
     { id: string; url: string; name: string; status: "good" | "bad" | "note"; reason: string }[]
   >([]);
@@ -67,7 +67,6 @@ export default function PPTReportPage() {
   const generatePPT = async () => {
     setGenerating(true);
     try {
-      // ✅ dynamic import فقط في المتصفح — يتجاوز node:fs error
       const PptxGenJS = (await import("pptxgenjs")).default;
       const pres = new PptxGenJS();
       pres.layout = "LAYOUT_16x9";
@@ -93,13 +92,12 @@ export default function PPTReportPage() {
       pres.writeFile({ fileName: "Ayla_Smart_Report.pptx" });
     } catch (err) {
       console.error(err);
-      alert("⚠️ خطأ في توليد PowerPoint. تأكد من تثبيت: npm install pptxgenjs");
+      alert("⚠️ خطأ في توليد PowerPoint");
     }
     setGenerating(false);
   };
 
   const removeImage = (id: string) => setImages((prev) => prev.filter((i) => i.id !== id));
-
   const goodCount = images.filter((i) => i.status === "good").length;
 
   return (

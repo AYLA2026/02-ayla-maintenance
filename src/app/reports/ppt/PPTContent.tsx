@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Camera,
   Sparkles,
@@ -8,6 +8,22 @@ import {
   Trash2,
   Presentation,
 } from "lucide-react";
+
+/* 🌐 تحميل pptxgenjs من CDN — webpack ما يلمسه */
+function loadPptxGenJS(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") return reject("SSR");
+    const w = window as any;
+    if (w.PptxGenJS) return resolve(w.PptxGenJS);
+
+    const script = document.createElement("script");
+    script.src =
+      "https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js";
+    script.onload = () => resolve(w.PptxGenJS);
+    script.onerror = () => reject("فشل تحميل المكتبة");
+    document.head.appendChild(script);
+  });
+}
 
 export default function PPTContent() {
   const [images, setImages] = useState<
@@ -20,7 +36,14 @@ export default function PPTContent() {
     }[]
   >([]);
   const [generating, setGenerating] = useState(false);
+  const [pptxReady, setPptxReady] = useState(false);
   const imgRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    loadPptxGenJS()
+      .then(() => setPptxReady(true))
+      .catch(console.error);
+  }, []);
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -102,9 +125,13 @@ export default function PPTContent() {
   };
 
   const generatePPT = async () => {
+    if (!pptxReady) {
+      alert("⏳ جاري تحميل المكتبة...");
+      return;
+    }
     setGenerating(true);
     try {
-      const PptxGenJS = (await import("pptxgenjs")).default;
+      const PptxGenJS = (window as any).PptxGenJS;
       const pres = new PptxGenJS();
       pres.layout = "LAYOUT_16x9";
       pres.defineSlideMaster({
@@ -230,13 +257,17 @@ export default function PPTContent() {
 
           <button
             onClick={generatePPT}
-            disabled={goodCount === 0 || generating}
+            disabled={goodCount === 0 || generating || !pptxReady}
             className="p-4 rounded-2xl border border-purple-200 bg-purple-600 text-white hover:bg-purple-700 flex items-center gap-3 disabled:opacity-50"
           >
             <Download className="w-5 h-5" />
             <div className="text-right">
               <p className="font-bold text-sm">
-                {generating ? "جاري التوليد..." : "تصدير PowerPoint"}
+                {!pptxReady
+                  ? "جاري التحميل..."
+                  : generating
+                  ? "جاري التوليد..."
+                  : "تصدير PowerPoint"}
               </p>
               <p className="text-xs text-purple-100">
                 {goodCount} صورة معتمدة

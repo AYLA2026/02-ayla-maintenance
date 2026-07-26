@@ -19,7 +19,7 @@ const mainLinks = [
   { href: "/finance", label: "المالية", icon: DollarSign },
   { href: "/inventory", label: "المخازن", icon: Package },
   { href: "/teams", label: "الفرق", icon: Shield },
-  { href: "/scheduled-maintenance", label: "الصيانة المجدولة", icon: Calendar },
+  { href: "/schedule", label: "الصيانة المجدولة", icon: Calendar },
 ];
 
 const reportLinks = [

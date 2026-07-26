@@ -70,9 +70,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const buffer = await pres.write({ outputType: "nodebuffer" });
+    const buffer = await pres.write({ outputType: "arraybuffer" }) as ArrayBuffer;
 
-    return new NextResponse(buffer, {
+    return new Response(buffer, {
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.presentationml.presentation",

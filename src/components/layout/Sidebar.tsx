@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   LayoutDashboard, Briefcase, School, Car, Users, DollarSign, Package,
   FileText, ClipboardList, Wrench, Settings, Bell,
   ChevronLeft, ChevronDown, Sparkles, Wind, Camera, CheckCircle,
-  Inbox, Bot, History,
+  Inbox, Bot, History, Shield, Calendar, Menu, X
 } from "lucide-react";
 
 const mainLinks = [
@@ -18,6 +18,8 @@ const mainLinks = [
   { href: "/employees", label: "القوى العاملة", icon: Users },
   { href: "/finance", label: "المالية", icon: DollarSign },
   { href: "/inventory", label: "المخازن", icon: Package },
+  { href: "/teams", label: "الفرق", icon: Shield },
+  { href: "/scheduled-maintenance", label: "الصيانة المجدولة", icon: Calendar },
 ];
 
 const reportLinks = [
@@ -46,8 +48,6 @@ export default function Sidebar() {
   const [reportsOpen, setReportsOpen] = useState(pathname?.startsWith("/reports"));
   const [complaintsOpen, setComplaintsOpen] = useState(pathname?.startsWith("/complaints"));
 
-  useEffect(() => setIsOpen(false), [pathname]);
-
   if (pathname?.startsWith("/auth") || pathname?.startsWith("/technician-app")) return null;
 
   const NavLink = ({ href, label, icon: Icon, isSub, onClick }: any) => {
@@ -73,60 +73,52 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Top Bar */}
-      <header className="fixed top-0 right-0 left-0 h-16 bg-[#1A0F09] border-b border-[#C9A227]/10 z-50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          {/* Hamburger */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="p-2 rounded-lg hover:bg-[#C9A227]/10 transition active:scale-95"
-            aria-label="القائمة"
-          >
-            <div className="space-y-1">
-              <div className="w-6 h-0.5 bg-[#C9A227] rounded-full" />
-              <div className="w-6 h-0.5 bg-[#C9A227] rounded-full" />
-              <div className="w-6 h-0.5 bg-[#C9A227] rounded-full" />
-            </div>
-          </button>
-          {/* Bell */}
-          <button className="p-2 rounded-lg hover:bg-[#C9A227]/10 transition relative">
-            <Bell className="w-5 h-5 text-[#C9A227]" />
-            <span className="absolute top-1 left-1 w-2 h-2 rounded-full bg-red-500 animate-ping" />
-          </button>
-        </div>
+      {/* زر القائمة — ظاهر فقط في الموبايل */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed top-4 right-4 z-[60] lg:hidden p-2.5 rounded-xl bg-[#1A0F09] border border-[#C9A227]/20 text-[#C9A227] shadow-lg active:scale-95 transition"
+        aria-label="القائمة"
+      >
+        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
 
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#C9A227] flex items-center justify-center shadow-lg shadow-[#C9A227]/20">
-            <Wrench className="w-4 h-4 text-[#1A0F09]" />
-          </div>
-          <div>
-            <h1 className="font-bold text-[#C9A227] text-sm leading-tight">آيلا</h1>
-            <p className="text-[8px] text-[#C9A227]/40">للصيانة</p>
-          </div>
-        </div>
-      </header>
-
-      {/* Overlay */}
+      {/* Overlay للموبايل */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Sidebar Panel */}
+      {/* الشريط الجانبي */}
       <aside
-        className={`fixed top-16 right-0 bottom-0 w-64 bg-[#1A0F09] border-l border-[#C9A227]/10 z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        } flex flex-col overflow-hidden`}
+        className={`fixed top-0 right-0 h-screen w-64 bg-[#1A0F09] border-l border-[#C9A227]/10 z-50 flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        }`}
       >
+        {/* الهيدر */}
+        <div className="p-5 border-b border-[#C9A227]/10 shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#C9A227] flex items-center justify-center shadow-lg shadow-[#C9A227]/20">
+              <Wrench className="w-5 h-5 text-[#1A0F09]" />
+            </div>
+            <div>
+              <h1 className="font-bold text-[#C9A227] text-lg leading-tight">آيلا</h1>
+              <p className="text-[10px] text-[#C9A227]/40">للصيانة</p>
+            </div>
+          </div>
+          <button className="p-2 rounded-lg hover:bg-[#C9A227]/10 transition relative">
+            <Bell className="w-4 h-4 text-[#C9A227]" />
+            <span className="absolute top-1 left-1 w-2 h-2 rounded-full bg-red-500 animate-ping" />
+          </button>
+        </div>
+
         <nav className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0">
           {mainLinks.map((link) => (
             <NavLink key={link.href} {...link} onClick={() => setIsOpen(false)} />
           ))}
 
-          {/* التقارير */}
+          {/* قسم التقارير */}
           <div className="pt-2">
             <button
               onClick={() => setReportsOpen(!reportsOpen)}
@@ -147,7 +139,7 @@ export default function Sidebar() {
             )}
           </div>
 
-          {/* البلاغات */}
+          {/* قسم البلاغات */}
           <div className="pt-2 border-t border-[#C9A227]/5">
             <button
               onClick={() => setComplaintsOpen(!complaintsOpen)}
@@ -176,8 +168,8 @@ export default function Sidebar() {
         </nav>
       </aside>
 
-      {/* Spacer for fixed header */}
-      <div className="h-16" />
+      {/* مسافة دفع للشاشات الكبيرة */}
+      <div className="hidden lg:block w-64 shrink-0" />
     </>
   );
 }

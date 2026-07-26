@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
       ],
     });
 
+    // شريحة العنوان
     const slide1 = pres.addSlide({ masterName: "MASTER_SLIDE" });
     slide1.addText("التقرير المصور الذكي", {
       x: 1,
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
       align: "center",
     });
 
+    // شرائح الصور (صورتين بكل شريحة)
     for (let i = 0; i < images.length; i += 2) {
       const slide = pres.addSlide({ masterName: "MASTER_SLIDE" });
       slide.addText(`الصور ${i + 1} - ${i + 2}`, {

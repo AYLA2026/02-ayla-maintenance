@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Camera, Sparkles, Download, Trash2, Presentation, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Camera, Sparkles, Download, Trash2, Presentation } from "lucide-react";
 
 export default function PPTReportPage() {
-  const [images, setImages] = useState<{ id: string; url: string; name: string; status: "good" | "bad" | "note"; reason: string }[]>([]);
+  const [images, setImages] = useState<
+    { id: string; url: string; name: string; status: "good" | "bad" | "note"; reason: string }[]
+  >([]);
   const [generating, setGenerating] = useState(false);
   const imgRef = useRef<HTMLInputElement>(null);
 
@@ -14,7 +16,10 @@ export default function PPTReportPage() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const url = ev.target?.result as string;
-        setImages((prev) => [...prev, { id: Math.random().toString(36).slice(2), url, name: file.name, status: "good", reason: "" }]);
+        setImages((prev) => [
+          ...prev,
+          { id: Math.random().toString(36).slice(2), url, name: file.name, status: "good", reason: "" },
+        ]);
       };
       reader.readAsDataURL(file);
     });
@@ -62,6 +67,7 @@ export default function PPTReportPage() {
   const generatePPT = async () => {
     setGenerating(true);
     try {
+      // ✅ dynamic import فقط في المتصفح — يتجاوز node:fs error
       const PptxGenJS = (await import("pptxgenjs")).default;
       const pres = new PptxGenJS();
       pres.layout = "LAYOUT_16x9";
@@ -85,8 +91,9 @@ export default function PPTReportPage() {
       }
 
       pres.writeFile({ fileName: "Ayla_Smart_Report.pptx" });
-    } catch {
-      alert("⚠️ تأكد من تثبيت المكتبة: npm install pptxgenjs");
+    } catch (err) {
+      console.error(err);
+      alert("⚠️ خطأ في توليد PowerPoint. تأكد من تثبيت: npm install pptxgenjs");
     }
     setGenerating(false);
   };

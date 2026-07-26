@@ -135,7 +135,7 @@ export default function ComplaintsInboxPage() {
         issueType: (ISSUE_TYPES.includes(row[2]) ? row[2] : "أخرى") as IssueType,
         description: String(row[3] || ""),
         priority: (PRIORITIES.includes(row[4]) ? row[4] : "عادي") as Priority,
-        status: "جديد",
+        status: "جديد" as Status,  // ← هنا التعديل
         assignedTo: String(row[5] || ""),
         team: String(row[6] || ""),
         date: new Date().toISOString().split("T")[0],
@@ -158,7 +158,7 @@ export default function ComplaintsInboxPage() {
       issueType: form.issueType,
       description: form.description,
       priority: form.priority,
-      status: "جديد",
+      status: "جديد" as Status,  // ← هنا التعديل
       assignedTo: "",
       team: "",
       date: new Date().toISOString().split("T")[0],

@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const buffer = await pres.write({ type: "nodebuffer" });
+    const buffer = await pres.write({ outputType: "nodebuffer" });
 
     return new NextResponse(buffer, {
       headers: {

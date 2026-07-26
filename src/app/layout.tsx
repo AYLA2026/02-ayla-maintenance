@@ -15,11 +15,7 @@ export const metadata: Metadata = {
   description: "نظام إدارة الصيانة المتكامل للمدارس",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={`${inter.variable} ${tajawal.variable}`}>
       <body className="bg-[#FAF7F2] text-[#2C1810]">

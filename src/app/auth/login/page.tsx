@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { Wrench, Shield, Building2, HardHat, Eye, LogIn, Zap, Mail, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole, ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
@@ -56,18 +55,25 @@ function LoginInner() {
     if (!email.trim() || !password.trim()) { alert("Email and password required"); return; }
     setSubmitting(true);
     
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-      callbackUrl: "/",
-    });
-    
-    if (res?.error) {
-      alert("Invalid email or password");
-      setSubmitting(false);
-    } else {
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        alert(data.error || "Login failed");
+        setSubmitting(false);
+        return;
+      }
+      
+      login(data.user, data.tenant || selectedTenant);
       window.location.assign("/");
+    } catch {
+      alert("Network error");
+      setSubmitting(false);
     }
   };
 

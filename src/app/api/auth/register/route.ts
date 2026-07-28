@@ -1,8 +1,8 @@
-﻿export const runtime = "nodejs"
-
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
+import { signJWT } from "@/lib/jwt";
+import { cookies } from "next/headers";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +24,25 @@ export async function POST(req: NextRequest) {
     await prisma.tenantMember.create({
       data: { userId: user.id, tenantId: tenant.id, role: "admin" },
     });
+
+    // Auto-login after register
+    const token = await signJWT({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: "admin",
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+    });
+
+    (await cookies()).set("ayla_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+
     return NextResponse.json({ success: true, userId: user.id, tenantId: tenant.id });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -3,8 +3,8 @@ import ClientProviders from "@/components/ClientProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "آيلا للصيانة",
-  description: "نظام إدارة الصيانة المتكامل",
+  title: "Ayla Maintenance",
+  description: "Multi-Tenant Maintenance Management System",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

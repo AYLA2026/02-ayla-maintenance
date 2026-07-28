@@ -46,7 +46,7 @@ export default function TechnicianLogin() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "linear-gradient(135deg, #1A0F09 0%, #2C1810 100%)" }}>
 <div className="technician-logout-bar fixed top-0 left-0 right-0 z-50 bg-[#1A0F09]/90 backdrop-blur border-b border-[#C9A227]/10 px-4 py-3 flex items-center justify-between">
   <span className="text-[#C9A227] font-bold text-sm">Ayla — Technician App</span>
-  <button onClick={() => { logout(); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
+  <button onClick={() => { localStorage.removeItem("ayla_user"); localStorage.removeItem("ayla_tenant"); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
     <LogOut className="w-3 h-3" /> Exit
   </button>
 </div>
@@ -55,7 +55,7 @@ export default function TechnicianLogin() {
         <div className="text-center mb-8">
 <div className="technician-logout-bar fixed top-0 left-0 right-0 z-50 bg-[#1A0F09]/90 backdrop-blur border-b border-[#C9A227]/10 px-4 py-3 flex items-center justify-between">
   <span className="text-[#C9A227] font-bold text-sm">Ayla — Technician App</span>
-  <button onClick={() => { logout(); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
+  <button onClick={() => { localStorage.removeItem("ayla_user"); localStorage.removeItem("ayla_tenant"); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
     <LogOut className="w-3 h-3" /> Exit
   </button>
 </div>
@@ -63,7 +63,7 @@ export default function TechnicianLogin() {
           <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4" style={{ background: "linear-gradient(135deg, #C9A227 0%, #D4AF37 100%)" }}>
 <div className="technician-logout-bar fixed top-0 left-0 right-0 z-50 bg-[#1A0F09]/90 backdrop-blur border-b border-[#C9A227]/10 px-4 py-3 flex items-center justify-between">
   <span className="text-[#C9A227] font-bold text-sm">Ayla — Technician App</span>
-  <button onClick={() => { logout(); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
+  <button onClick={() => { localStorage.removeItem("ayla_user"); localStorage.removeItem("ayla_tenant"); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
     <LogOut className="w-3 h-3" /> Exit
   </button>
 </div>
@@ -78,7 +78,7 @@ export default function TechnicianLogin() {
           <div className="relative">
 <div className="technician-logout-bar fixed top-0 left-0 right-0 z-50 bg-[#1A0F09]/90 backdrop-blur border-b border-[#C9A227]/10 px-4 py-3 flex items-center justify-between">
   <span className="text-[#C9A227] font-bold text-sm">Ayla — Technician App</span>
-  <button onClick={() => { logout(); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
+  <button onClick={() => { localStorage.removeItem("ayla_user"); localStorage.removeItem("ayla_tenant"); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
     <LogOut className="w-3 h-3" /> Exit
   </button>
 </div>
@@ -91,7 +91,7 @@ export default function TechnicianLogin() {
           <div className="relative">
 <div className="technician-logout-bar fixed top-0 left-0 right-0 z-50 bg-[#1A0F09]/90 backdrop-blur border-b border-[#C9A227]/10 px-4 py-3 flex items-center justify-between">
   <span className="text-[#C9A227] font-bold text-sm">Ayla — Technician App</span>
-  <button onClick={() => { logout(); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
+  <button onClick={() => { localStorage.removeItem("ayla_user"); localStorage.removeItem("ayla_tenant"); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
     <LogOut className="w-3 h-3" /> Exit
   </button>
 </div>
@@ -104,7 +104,7 @@ export default function TechnicianLogin() {
           {error && <div className="text-red-400 text-sm text-center">
 <div className="technician-logout-bar fixed top-0 left-0 right-0 z-50 bg-[#1A0F09]/90 backdrop-blur border-b border-[#C9A227]/10 px-4 py-3 flex items-center justify-between">
   <span className="text-[#C9A227] font-bold text-sm">Ayla — Technician App</span>
-  <button onClick={() => { logout(); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
+  <button onClick={() => { localStorage.removeItem("ayla_user"); localStorage.removeItem("ayla_tenant"); window.location.assign("/auth/login"); }} className="px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition">
     <LogOut className="w-3 h-3" /> Exit
   </button>
 </div>
@@ -120,3 +120,4 @@ export default function TechnicianLogin() {
     </div>
   );
 }
+

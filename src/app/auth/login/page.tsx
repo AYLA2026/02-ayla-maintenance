@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Wrench, Building2, Shield, Eye, HardHat, ChevronDown, UserCheck, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole, ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
@@ -15,7 +14,6 @@ const ROLE_LIST: { key: UserRole; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function LoginPage() {
-  const router = useRouter();
   const { login, logout, tenants, user, isLoading } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -24,20 +22,27 @@ export default function LoginPage() {
   const [showRoles, setShowRoles] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // اختيار أول شركة تلقائياً
   useEffect(() => {
     if (tenants.length > 0 && !tenantId) {
       setTenantId(tenants[0].id);
     }
   }, [tenants, tenantId]);
 
-  // تحويل فوري إذا مسجل دخوله (ما يظهر النموذج)
-  useEffect(() => {
-    if (!isLoading && user) {
-      const target = user.role === "technician" ? "/technician-app" : "/";
-      router.replace(target);
+  // fallback: إذا مسجل دخوله وما تحول — اضغط هنا
+  const doRedirect = (targetRole?: UserRole) => {
+    const r = targetRole || user?.role || role;
+    const target = r === "technician" ? "/technician-app" : "/";
+    if (typeof window !== "undefined") {
+      window.location.replace(target);
     }
-  }, [isLoading, user, router]);
+  };
+
+  // محاولة تحويل تلقائي إذا مسجل
+  useEffect(() => {
+    if (!isLoading && user && typeof window !== "undefined") {
+      doRedirect(user.role);
+    }
+  }, [isLoading, user]);
 
   const selectedTenant = tenants.find((t) => t.id === tenantId) || tenants[0];
   const selectedRoleData = ROLE_LIST.find((r) => r.key === role)!;
@@ -59,17 +64,15 @@ export default function LoginPage() {
 
     login(newUser, selectedTenant);
 
-    // تحويل فوري بعد تسجيل الدخول
-    const target = role === "technician" ? "/technician-app" : "/";
-    router.replace(target);
+    // تحويل فوري بأقوى طريقة
+    doRedirect(role);
   };
 
   const handleLogout = () => {
     logout();
-    window.location.reload();
+    if (typeof window !== "undefined") window.location.reload();
   };
 
-  // أثناء التحميل — ما يظهر شي
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#1A0F09] flex items-center justify-center">
@@ -78,12 +81,17 @@ export default function LoginPage() {
     );
   }
 
-  // إذا مسجل دخوله — ما يظهر النموذج (يتحول فوراً بالuseEffect)
   if (user) {
     return (
       <div className="min-h-screen bg-[#1A0F09] flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 border-2 border-[#C9A227] border-t-transparent rounded-full animate-spin" />
         <p className="text-[#C9A227] text-sm">جاري التحويل...</p>
+        <button
+          onClick={() => doRedirect()}
+          className="px-4 py-2 rounded-lg bg-[#C9A227] text-[#1A0F09] text-xs font-bold"
+        >
+          اضغط هنا إذا ما تحول
+        </button>
         <button onClick={handleLogout} className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1">
           <LogOut className="w-3 h-3" /> تسجيل الخروج
         </button>
@@ -94,7 +102,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#1A0F09] flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-md">
-        {/* الهيدر */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-[#C9A227] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#C9A227]/20">
             <Wrench className="w-8 h-8 text-[#1A0F09]" />
@@ -103,9 +110,7 @@ export default function LoginPage() {
           <p className="text-[#C9A227]/50 text-sm mt-1">نظام إدارة متعدد الشركات</p>
         </div>
 
-        {/* النموذج */}
         <div className="bg-white/5 backdrop-blur border border-[#C9A227]/10 rounded-2xl p-6 space-y-4">
-          {/* الشركة */}
           <div>
             <label className="text-xs text-[#C9A227]/60 block mb-1.5">الشركة / المنشأة</label>
             <select
@@ -119,7 +124,6 @@ export default function LoginPage() {
             </select>
           </div>
 
-          {/* الدور */}
           <div>
             <label className="text-xs text-[#C9A227]/60 block mb-1.5">الدور الوظيفي</label>
             <div className="relative">
@@ -154,7 +158,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* الاسم */}
           <div>
             <label className="text-xs text-[#C9A227]/60 block mb-1.5">الاسم الكامل *</label>
             <input
@@ -165,7 +168,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* البريد */}
           <div>
             <label className="text-xs text-[#C9A227]/60 block mb-1.5">البريد الإلكتروني (اختياري)</label>
             <input
@@ -177,7 +179,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* زر الدخول */}
           <button
             type="button"
             onClick={handleLogin}

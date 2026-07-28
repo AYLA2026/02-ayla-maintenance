@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { AuthProvider } from "@/lib/auth-context";
 import Sidebar from "@/components/layout/Sidebar";

@@ -1,5 +1,4 @@
-﻿import type { Metadata } from "next"; import { AuthProvider } from "@/lib/auth-context"; import Sidebar from "@/components/layout/Sidebar"; import "./globals.css"; export const metadata: Metadata = { title: "آيلا للصيانة", description: "نظام إدارة الصيانة المتكامل" }; export default function RootLayout({ children }: { children: React.ReactNode }) { return (<html lang="ar" dir="rtl"><body className="bg-[#FAF7F2]"><AuthProvider><Sidebar /><main className="min-h-screen">{children}</main></AuthProvider></body></html>); }
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import ClientProviders from "@/components/ClientProviders";
 import "./globals.css";
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Wrench, Building2, Shield, Eye, HardHat, ChevronDown, UserCheck, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole, ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
@@ -14,13 +15,14 @@ const ROLE_LIST: { key: UserRole; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function LoginPage() {
+  const router = useRouter();
   const { login, logout, tenants, user, isLoading } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("admin");
   const [tenantId, setTenantId] = useState("");
   const [showRoles, setShowRoles] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // اختيار أول شركة تلقائياً
   useEffect(() => {
@@ -29,13 +31,13 @@ export default function LoginPage() {
     }
   }, [tenants, tenantId]);
 
-  // تحويل تلقائي إذا كان مسجل مسبقاً (بعد ما يخلص التحميل)
+  // تحويل فوري إذا مسجل دخوله (ما يظهر النموذج)
   useEffect(() => {
-    if (!isLoading && user && typeof window !== "undefined") {
+    if (!isLoading && user) {
       const target = user.role === "technician" ? "/technician-app" : "/";
-      window.location.href = target;
+      router.replace(target);
     }
-  }, [isLoading, user]);
+  }, [isLoading, user, router]);
 
   const selectedTenant = tenants.find((t) => t.id === tenantId) || tenants[0];
   const selectedRoleData = ROLE_LIST.find((r) => r.key === role)!;
@@ -45,7 +47,7 @@ export default function LoginPage() {
     if (!name.trim()) { alert("الاسم مطلوب"); return; }
     if (!selectedTenant) { alert("اختر شركة"); return; }
 
-    setLoading(true);
+    setIsSubmitting(true);
 
     const newUser = {
       id: `usr-${Date.now()}`,
@@ -55,18 +57,39 @@ export default function LoginPage() {
       tenantId: selectedTenant.id,
     };
 
-    // 1. سجل الدخول
     login(newUser, selectedTenant);
 
-    // 2. تحويل فوري — ما ننتظر useEffect
+    // تحويل فوري بعد تسجيل الدخول
     const target = role === "technician" ? "/technician-app" : "/";
-    window.location.href = target;
+    router.replace(target);
   };
 
   const handleLogout = () => {
     logout();
     window.location.reload();
   };
+
+  // أثناء التحميل — ما يظهر شي
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#1A0F09] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#C9A227] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // إذا مسجل دخوله — ما يظهر النموذج (يتحول فوراً بالuseEffect)
+  if (user) {
+    return (
+      <div className="min-h-screen bg-[#1A0F09] flex flex-col items-center justify-center gap-4">
+        <div className="w-8 h-8 border-2 border-[#C9A227] border-t-transparent rounded-full animate-spin" />
+        <p className="text-[#C9A227] text-sm">جاري التحويل...</p>
+        <button onClick={handleLogout} className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1">
+          <LogOut className="w-3 h-3" /> تسجيل الخروج
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#1A0F09] flex items-center justify-center p-4" dir="rtl">
@@ -79,21 +102,6 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-[#C9A227]">آيلا للصيانة</h1>
           <p className="text-[#C9A227]/50 text-sm mt-1">نظام إدارة متعدد الشركات</p>
         </div>
-
-        {/* إشعار: أنت مسجل دخولك */}
-        {user && (
-          <div className="bg-white/5 border border-[#C9A227]/20 rounded-xl p-4 mb-4 text-center">
-            <p className="text-[#C9A227] text-sm mb-2">
-              أنت مسجل دخولك كـ: <strong>{user.name}</strong> ({ROLE_LABELS[user.role]})
-            </p>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold hover:bg-red-600/30 transition flex items-center gap-1 mx-auto"
-            >
-              <LogOut className="w-3 h-3" /> تسجيل الخروج وإعادة الدخول
-            </button>
-          </div>
-        )}
 
         {/* النموذج */}
         <div className="bg-white/5 backdrop-blur border border-[#C9A227]/10 rounded-2xl p-6 space-y-4">
@@ -173,10 +181,10 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleLogin}
-            disabled={loading}
+            disabled={isSubmitting}
             className="w-full py-3 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {isSubmitting ? (
               <span className="w-5 h-5 border-2 border-[#1A0F09] border-t-transparent rounded-full animate-spin" />
             ) : (
               <>

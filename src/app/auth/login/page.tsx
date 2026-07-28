@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Wrench, Building2, Shield, Eye, HardHat, ChevronDown, UserCheck } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Wrench, Building2, Shield, Eye, HardHat, ChevronDown, UserCheck, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole, ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
 
@@ -15,45 +14,40 @@ const ROLE_LIST: { key: UserRole; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login, tenants, user } = useAuth();
+  const { login, logout, tenants, user } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("admin");
   const [tenantId, setTenantId] = useState("");
   const [showRoles, setShowRoles] = useState(false);
   const [loading, setLoading] = useState(false);
+  const hasRedirected = useRef(false);
 
-  // إذا فيه مستخدم مسجل، حوّله للرئيسية
-  useEffect(() => {
-    if (user) {
-      router.push(role === "technician" ? "/technician-app" : "/");
-    }
-  }, [user, role, router]);
-
-  // تأكد إن الشركة المختارة موجودة
+  // اختيار أول شركة تلقائياً
   useEffect(() => {
     if (tenants.length > 0 && !tenantId) {
       setTenantId(tenants[0].id);
     }
   }, [tenants, tenantId]);
 
+  // تحويل المستخدم المسجل تلقائياً (مرة واحدة فقط)
+  useEffect(() => {
+    if (hasRedirected.current) return;
+    if (user) {
+      hasRedirected.current = true;
+      const target = user.role === "technician" ? "/technician-app" : "/";
+      window.location.replace(target);
+    }
+  }, [user]);
+
   const selectedTenant = tenants.find((t) => t.id === tenantId) || tenants[0];
   const selectedRoleData = ROLE_LIST.find((r) => r.key === role)!;
   const RoleIcon = selectedRoleData.icon;
 
   const handleLogin = () => {
-    if (!name.trim()) {
-      alert("الاسم مطلوب");
-      return;
-    }
-    if (!selectedTenant) {
-      alert("اختر شركة");
-      return;
-    }
-
+    if (!name.trim()) { alert("الاسم مطلوب"); return; }
+    if (!selectedTenant) { alert("اختر شركة"); return; }
     setLoading(true);
-
     const newUser = {
       id: `usr-${Date.now()}`,
       name: name.trim(),
@@ -61,19 +55,13 @@ export default function LoginPage() {
       role,
       tenantId: selectedTenant.id,
     };
-
-    console.log("Logging in:", newUser, "Tenant:", selectedTenant);
     login(newUser, selectedTenant);
+    // التوجيه يتم تلقائياً عن طريق useEffect
+  };
 
-    // التوجيه بعد نصف ثانية عشان يكتمل التحديث
-    setTimeout(() => {
-      if (role === "technician") {
-        router.push("/technician-app");
-      } else {
-        router.push("/");
-      }
-      setLoading(false);
-    }, 300);
+  const handleLogout = () => {
+    logout();
+    window.location.reload();
   };
 
   return (
@@ -88,6 +76,22 @@ export default function LoginPage() {
           <p className="text-[#C9A227]/50 text-sm mt-1">نظام إدارة متعدد الشركات</p>
         </div>
 
+        {/* إشعار: أنت مسجل دخولك */}
+        {user && (
+          <div className="bg-white/5 border border-[#C9A227]/20 rounded-xl p-4 mb-4 text-center">
+            <p className="text-[#C9A227] text-sm mb-2">
+              أنت مسجل دخولك كـ: <strong>{user.name}</strong> ({ROLE_LABELS[user.role]})
+            </p>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold hover:bg-red-600/30 transition flex items-center gap-1 mx-auto"
+            >
+              <LogOut className="w-3 h-3" /> تسجيل الخروج وإعادة الدخول
+            </button>
+          </div>
+        )}
+
+        {/* النموذج */}
         <div className="bg-white/5 backdrop-blur border border-[#C9A227]/10 rounded-2xl p-6 space-y-4">
           {/* الشركة */}
           <div>
@@ -98,9 +102,7 @@ export default function LoginPage() {
               className="w-full px-4 py-3 rounded-xl bg-[#2C1810] border border-[#C9A227]/20 text-[#C9A227] text-sm focus:outline-none focus:border-[#C9A227]"
             >
               {tenants.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
+                <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
           </div>
@@ -120,7 +122,6 @@ export default function LoginPage() {
                 </span>
                 <ChevronDown className={`w-4 h-4 transition ${showRoles ? "rotate-180" : ""}`} />
               </button>
-
               {showRoles && (
                 <div className="absolute top-full mt-1 w-full bg-[#2C1810] border border-[#C9A227]/20 rounded-xl overflow-hidden z-10 shadow-xl">
                   {ROLE_LIST.map((r) => {
@@ -129,16 +130,10 @@ export default function LoginPage() {
                       <button
                         key={r.key}
                         type="button"
-                        onClick={() => {
-                          setRole(r.key);
-                          setShowRoles(false);
-                        }}
-                        className={`w-full px-4 py-3 text-right text-sm font-bold flex items-center gap-2 hover:bg-[#C9A227]/10 transition ${
-                          role === r.key ? "text-[#C9A227]" : "text-gray-400"
-                        }`}
+                        onClick={() => { setRole(r.key); setShowRoles(false); }}
+                        className={`w-full px-4 py-3 text-right text-sm font-bold flex items-center gap-2 hover:bg-[#C9A227]/10 transition ${role === r.key ? "text-[#C9A227]" : "text-gray-400"}`}
                       >
-                        <Icon className="w-4 h-4" />
-                        {r.label}
+                        <Icon className="w-4 h-4" /> {r.label}
                       </button>
                     );
                   })}

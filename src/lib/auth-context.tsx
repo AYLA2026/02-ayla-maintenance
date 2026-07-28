@@ -1,0 +1,71 @@
+"use client";
+
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { AuthUser, Tenant } from "./permissions";
+
+interface AuthContextType {
+  user: AuthUser | null;
+  tenant: Tenant | null;
+  tenants: Tenant[];
+  login: (user: AuthUser, tenant: Tenant) => void;
+  logout: () => void;
+  switchTenant: (tenant: Tenant) => void;
+  isLoading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const DEFAULT_TENANTS: Tenant[] = [
+  { id: "ayla-main", name: "آيلا للصيانة", color: "#C9A227" },
+  { id: "demo-1", name: "شركة النور", color: "#2563eb" },
+];
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [tenants, setTenants] = useState<Tenant[]>(DEFAULT_TENANTS);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedUser = localStorage.getItem("ayla_user");
+      const savedTenant = localStorage.getItem("ayla_tenant");
+      const savedTenants = localStorage.getItem("ayla_tenants");
+      if (savedUser) setUser(JSON.parse(savedUser));
+      if (savedTenant) setTenant(JSON.parse(savedTenant));
+      if (savedTenants) setTenants(JSON.parse(savedTenants));
+      setIsLoading(false);
+    }
+  }, []);
+
+  const login = (newUser: AuthUser, newTenant: Tenant) => {
+    setUser(newUser);
+    setTenant(newTenant);
+    localStorage.setItem("ayla_user", JSON.stringify(newUser));
+    localStorage.setItem("ayla_tenant", JSON.stringify(newTenant));
+  };
+
+  const logout = () => {
+    setUser(null);
+    setTenant(null);
+    localStorage.removeItem("ayla_user");
+    localStorage.removeItem("ayla_tenant");
+  };
+
+  const switchTenant = (newTenant: Tenant) => {
+    setTenant(newTenant);
+    localStorage.setItem("ayla_tenant", JSON.stringify(newTenant));
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, tenant, tenants, login, logout, switchTenant, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+}

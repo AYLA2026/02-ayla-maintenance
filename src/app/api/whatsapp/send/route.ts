@@ -1,34 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { to, message } = await request.json();
-
-    const token = process.env.WHATSAPP_ACCESS_TOKEN;
-    const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-    if (!token || !phoneId) {
-      return NextResponse.json({ error: "WhatsApp not configured" }, { status: 500 });
+    const { to, body } = await req.json();
+    if (!to || !body) {
+      return NextResponse.json({ error: "Missing to or body" }, { status: 400 });
     }
-
-    const res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to,
-        type: "text",
-        text: { body: message },
-      }),
-    });
-
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to send" }, { status: 500 });
+    const result = await sendWhatsAppMessage(to, body);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

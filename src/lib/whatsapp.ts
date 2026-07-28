@@ -1,71 +1,41 @@
-'use client';
+export async function sendWhatsAppMessage(to: string, body: string) {
+  const token = process.env.WHATSAPP_TOKEN;
+  const phoneNumberId = process.env.PHONE_NUMBER_ID;
 
-// تعريف نوع المشرف لضمان سلامة TypeScript
-interface Supervisor {
-  whatsapp_number: string;
-  name?: string;
-}
+  if (!token || !phoneNumberId) {
+    console.error("Missing WhatsApp credentials");
+    return { success: false, error: "Missing credentials" };
+  }
 
-// Twilio WhatsApp API Integration
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER;
+  const cleanTo = to.replace(/\D/g, "");
 
-/**
- * إرسال رسالة WhatsApp
- */
-export async function sendWhatsAppMessage(to: string, message: string) {
   try {
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        From: 'whatsapp:' + TWILIO_WHATSAPP_NUMBER,
-        To: 'whatsapp:' + to,
-        Body: message,
-      }),
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error sending WhatsApp:', error);
-    throw error;
+    const res = await fetch(
+      `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanTo,
+          type: "text",
+          text: { body },
+        }),
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error("WhatsApp API error:", data);
+      return { success: false, error: data.error?.message || "API error" };
+    }
+    return { success: true, data };
+  } catch (err: any) {
+    console.error("WhatsApp send error:", err);
+    return { success: false, error: err.message };
   }
-}
-
-/**
- * استقبال رسالة WhatsApp وتحويلها لبلاغ
- */
-export async function receiveWhatsAppMessage(from: string, body: string) {
-  const complaint = {
-    source: 'whatsapp',
-    reported_by: from,
-    description: body,
-    status: 'pending',
-    priority: 'medium',
-    created_at: new Date().toISOString(),
-  };
-  return complaint;
-}
-
-/**
- * إرسال إشعار للمشرفين
- */
-export async function notifySupervisors(complaint: any) {
-  const supervisors: Supervisor[] = await getSupervisors();
-  
-  for (const supervisor of supervisors) {
-    const message = `بلاغ جديد: ${complaint.description}\nالمدرسة: ${complaint.school_name}\nالأولوية: ${complaint.priority}`;
-    
-    // استخدام whatsapp_number بشكل آمن الآن بعد تعريف النوع
-    await sendWhatsAppMessage(supervisor.whatsapp_number, message);
-  }
-}
-
-async function getSupervisors(): Promise<Supervisor[]> {
-  // جلب المشرفين من قاعدة البيانات
-  // تأكد أن هذه الدالة تعيد مصفوفة من المشرفين
-  return [];
 }

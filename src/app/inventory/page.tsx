@@ -4,7 +4,7 @@ import { useState, useRef, useMemo } from "react";
 import {
   Package, Plus, X, Download, Search, Upload,
   AlertTriangle, TrendingDown, ArrowLeftRight, FileSpreadsheet,
-  Warehouse, BarChart3
+  Warehouse, BarChart3, Phone
 } from "lucide-react";
 
 type WarehouseType = "maintenance" | "electrical" | "hvac" | "civil";
@@ -282,12 +282,25 @@ export default function InventoryPage() {
           ))}
         </div>
 
-        {/* تنبيهات النواقص */}
+        {/* تنبيهات النواقص + إشعار واتساب */}
         {lowStock.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <span className="font-bold text-red-700 text-sm">تنبيه: أصناف وصلت للحد الأدنى ({lowStock.length})</span>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <span className="font-bold text-red-700 text-sm">تنبيه: أصناف وصلت للحد الأدنى ({lowStock.length})</span>
+              </div>
+              <button onClick={async () => {
+                const phone = prompt("أدخل رقم المشرف للإشعار عبر الواتساب:");
+                if (phone) {
+                  const list = lowStock.map(it => `• ${it.name} (${it.quantity} ${it.unit})`).join("\n");
+                  const msg = `⚠️ تنبيه مخزون منخفض في آيلا:\n${list}`;
+                  await fetch("/api/whatsapp/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: phone, body: msg }) });
+                  alert("✅ تم إرسال الإشعار");
+                }
+              }} className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition flex items-center gap-1">
+                <Phone className="w-3 h-3" /> إشعار واتساب
+              </button>
             </div>
             <div className="flex flex-wrap gap-2">
               {lowStock.map((it) => (

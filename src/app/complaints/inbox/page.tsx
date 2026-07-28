@@ -101,11 +101,13 @@ const DEFAULT_COMPLAINTS: Complaint[] = [
 
 export default function ComplaintsInboxPage() {
   const [complaints, setComplaints] = useState<Complaint[]>(DEFAULT_COMPLAINTS);
- useEffect(() => {
-  if (typeof window !== "undefined") {
-    localStorage.setItem("ayla_complaints", JSON.stringify(complaints));
-  }
-}, [complaints]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ayla_complaints", JSON.stringify(complaints));
+    }
+  }, [complaints]);
+
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<Status | "الكل">("الكل");
   const [filterPriority, setFilterPriority] = useState<Priority | "الكل">("الكل");
@@ -116,12 +118,26 @@ export default function ComplaintsInboxPage() {
 
   const [form, setForm] = useState({
     school: "", location: "", issueType: "أخرى" as IssueType,
-    description: "", priority: "عادي" as Priority, reporter: "", phone: ""
+    description: "", priority: "عادي" as Priority, reporter: "", phone: "", supervisorPhone: ""
   });
 
   const [detailForm, setDetailForm] = useState({
     status: "جديد" as Status, assignedTo: "", team: "", notes: ""
   });
+
+  const notifyWhatsApp = async (phone: string, message: string) => {
+    try {
+      const res = await fetch("/api/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: phone, body: message }),
+      });
+      const data = await res.json();
+      if (!data.success) console.error("WhatsApp failed:", data.error);
+    } catch (e) {
+      console.error("Notify error:", e);
+    }
+  };
 
   const handleExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,7 +156,7 @@ export default function ComplaintsInboxPage() {
         issueType: (ISSUE_TYPES.includes(row[2]) ? row[2] : "أخرى") as IssueType,
         description: String(row[3] || ""),
         priority: (PRIORITIES.includes(row[4]) ? row[4] : "عادي") as Priority,
-        status: "جديد" as Status,  // ← هنا التعديل
+        status: "جديد" as Status,
         assignedTo: String(row[5] || ""),
         team: String(row[6] || ""),
         date: new Date().toISOString().split("T")[0],
@@ -156,14 +172,16 @@ export default function ComplaintsInboxPage() {
 
   const addManual = () => {
     if (!form.school.trim() || !form.description.trim()) return alert("اسم المدرسة والوصف مطلوبان");
+    const newId = `BLG-${Date.now()}`;
+
     setComplaints((prev) => [...prev, {
-      id: `BLG-${Date.now()}`,
+      id: newId,
       school: form.school,
       location: form.location,
       issueType: form.issueType,
       description: form.description,
       priority: form.priority,
-      status: "جديد" as Status,  // ← هنا التعديل
+      status: "جديد" as Status,
       assignedTo: "",
       team: "",
       date: new Date().toISOString().split("T")[0],
@@ -171,11 +189,18 @@ export default function ComplaintsInboxPage() {
       phone: form.phone,
       notes: "",
     }]);
-    setForm({ school: "", location: "", issueType: "أخرى", description: "", priority: "عادي", reporter: "", phone: "" });
+
+    if (form.supervisorPhone.trim()) {
+      const msg = `🔔 بلاغ جديد في آيلا\n📍 المدرسة: ${form.school}\n⚠️ النوع: ${form.issueType}\n📝 ${form.description}\n🔢 الرقم: ${newId}`;
+      notifyWhatsApp(form.supervisorPhone, msg);
+    }
+
+    setForm({ school: "", location: "", issueType: "أخرى", description: "", priority: "عادي", reporter: "", phone: "", supervisorPhone: "" });
     setShowAdd(false);
   };
 
   const updateComplaint = (id: string) => {
+    const old = complaints.find(c => c.id === id);
     setComplaints((prev) => prev.map((c) => c.id === id ? {
       ...c,
       status: detailForm.status,
@@ -183,6 +208,12 @@ export default function ComplaintsInboxPage() {
       team: detailForm.team,
       notes: detailForm.notes,
     } : c));
+
+    if (old?.phone && detailForm.status !== old.status) {
+      const msg = `📋 تحديث بلاغ ${id}\n🏫 ${old.school}\n📊 الحالة الجديدة: ${detailForm.status}\n📝 ${detailForm.notes || "لا يوجد ملاحظات"}`;
+      notifyWhatsApp(old.phone, msg);
+    }
+
     setShowDetail(null);
   };
 
@@ -391,6 +422,7 @@ export default function ComplaintsInboxPage() {
               <textarea placeholder="وصف البلاغ بالتفصيل *" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227] h-24 resize-none md:col-span-2" />
               <input placeholder="اسم مقدم البلاغ" value={form.reporter} onChange={(e) => setForm({ ...form, reporter: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
               <input placeholder="رقم الجوال" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+              <input placeholder="رقم المشرف للإشعار (واتساب)" value={form.supervisorPhone} onChange={(e) => setForm({ ...form, supervisorPhone: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227] md:col-span-2" />
             </div>
             <div className="mt-6 flex gap-3 justify-end">
               <button onClick={() => setShowAdd(false)} className="px-5 py-2 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition">إلغاء</button>

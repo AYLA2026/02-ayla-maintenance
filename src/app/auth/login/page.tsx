@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Wrench, Building2, Shield, Eye, HardHat, ChevronDown, UserCheck, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole, ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
@@ -14,14 +14,13 @@ const ROLE_LIST: { key: UserRole; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function LoginPage() {
-  const { login, logout, tenants, user } = useAuth();
+  const { login, logout, tenants, user, isLoading } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("admin");
   const [tenantId, setTenantId] = useState("");
   const [showRoles, setShowRoles] = useState(false);
   const [loading, setLoading] = useState(false);
-  const hasRedirected = useRef(false);
 
   // اختيار أول شركة تلقائياً
   useEffect(() => {
@@ -30,15 +29,13 @@ export default function LoginPage() {
     }
   }, [tenants, tenantId]);
 
-  // تحويل المستخدم المسجل تلقائياً (مرة واحدة فقط)
+  // تحويل تلقائي إذا كان مسجل مسبقاً (بعد ما يخلص التحميل)
   useEffect(() => {
-    if (hasRedirected.current) return;
-    if (user) {
-      hasRedirected.current = true;
+    if (!isLoading && user && typeof window !== "undefined") {
       const target = user.role === "technician" ? "/technician-app" : "/";
-      window.location.replace(target);
+      window.location.href = target;
     }
-  }, [user]);
+  }, [isLoading, user]);
 
   const selectedTenant = tenants.find((t) => t.id === tenantId) || tenants[0];
   const selectedRoleData = ROLE_LIST.find((r) => r.key === role)!;
@@ -47,7 +44,9 @@ export default function LoginPage() {
   const handleLogin = () => {
     if (!name.trim()) { alert("الاسم مطلوب"); return; }
     if (!selectedTenant) { alert("اختر شركة"); return; }
+
     setLoading(true);
+
     const newUser = {
       id: `usr-${Date.now()}`,
       name: name.trim(),
@@ -55,8 +54,13 @@ export default function LoginPage() {
       role,
       tenantId: selectedTenant.id,
     };
+
+    // 1. سجل الدخول
     login(newUser, selectedTenant);
-    // التوجيه يتم تلقائياً عن طريق useEffect
+
+    // 2. تحويل فوري — ما ننتظر useEffect
+    const target = role === "technician" ? "/technician-app" : "/";
+    window.location.href = target;
   };
 
   const handleLogout = () => {

@@ -2,19 +2,27 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Wrench, Shield, Building2, HardHat, Eye, ArrowRight, LogIn } from "lucide-react";
+import { Wrench, Shield, Building2, HardHat, Eye, LogIn, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole, ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
 
 const ROLES = [
-  { key: "super_admin" as UserRole, icon: Shield, desc: "Full system access + tenant management" },
-  { key: "admin" as UserRole, icon: Building2, desc: "Company management + all modules" },
-  { key: "supervisor" as UserRole, icon: HardHat, desc: "Complaints + teams + inventory + schedule" },
-  { key: "technician" as UserRole, icon: Wrench, desc: "Technician mobile app access" },
-  { key: "viewer" as UserRole, icon: Eye, desc: "View-only: reports + schools + vehicles" },
+  { key: "super_admin" as UserRole, icon: Shield, desc: "Full system access" },
+  { key: "admin" as UserRole, icon: Building2, desc: "Company manager" },
+  { key: "supervisor" as UserRole, icon: HardHat, desc: "Complaints + teams" },
+  { key: "technician" as UserRole, icon: Wrench, desc: "Technician app" },
+  { key: "viewer" as UserRole, icon: Eye, desc: "View only" },
 ];
 
-function LoginForm() {
+const DEMO_USERS = [
+  { role: "super_admin" as UserRole, name: "Ayman Al-Admin", label: "مدير النظام" },
+  { role: "admin" as UserRole, name: "Khaled Al-Manager", label: "مدير الشركة" },
+  { role: "supervisor" as UserRole, name: "Faisal Al-Supervisor", label: "مشرف ميداني" },
+  { role: "technician" as UserRole, name: "Fahad Al-Tech", label: "فني صيانة" },
+  { role: "viewer" as UserRole, name: "Reviewer", label: "مشاهد" },
+];
+
+function LoginInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { login, tenants, user, isLoading } = useAuth();
@@ -22,6 +30,7 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [tenantId, setTenantId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const roleParam = searchParams.get("role") as UserRole | null;
   const validRoles: UserRole[] = ["super_admin", "admin", "supervisor", "technician", "viewer"];
@@ -41,21 +50,17 @@ function LoginForm() {
   const selectedTenant = tenants.find((t) => t.id === tenantId) || tenants[0];
 
   const handleLogin = () => {
-    if (!role) { alert("Select a role first"); return; }
-    if (!name.trim()) { alert("Name is required"); return; }
-    if (!selectedTenant) { alert("Select a company"); return; }
+    if (!role) return;
+    if (!name.trim()) { alert("Name required"); return; }
+    doLogin(role, name.trim(), email.trim() || `${name.trim()}@ayla.app`);
+  };
+
+  const doLogin = (r: UserRole, n: string, e: string) => {
+    if (!selectedTenant) return;
     setSubmitting(true);
-
-    const newUser = {
-      id: `usr-${Date.now()}`,
-      name: name.trim(),
-      email: email.trim() || `${name.trim()}@ayla.app`,
-      role,
-      tenantId: selectedTenant.id,
-    };
-
+    const newUser = { id: `usr-${Date.now()}`, name: n, email: e, role: r, tenantId: selectedTenant.id };
     login(newUser, selectedTenant);
-    const path = role === "technician" ? "/technician-app" : "/";
+    const path = r === "technician" ? "/technician-app" : "/";
     window.location.assign(path);
   };
 
@@ -77,17 +82,35 @@ function LoginForm() {
     );
   }
 
-  // ─── Selector View (no role selected) ───
+  // ─── Selector View ───
   if (!role) {
     return (
       <div className="min-h-screen bg-[#1A0F09] flex items-center justify-center p-4" dir="rtl">
         <div className="w-full max-w-4xl">
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <div className="w-20 h-20 rounded-2xl bg-[#C9A227] flex items-center justify-center mx-auto mb-5 shadow-xl shadow-[#C9A227]/20">
               <Wrench className="w-10 h-10 text-[#1A0F09]" />
             </div>
             <h1 className="text-3xl font-bold text-[#C9A227] mb-2">Ayla Maintenance</h1>
             <p className="text-[#C9A227]/50 text-sm">Multi-Tenant Maintenance Management System</p>
+          </div>
+
+          {/* دخول سريع */}
+          <div className="bg-white/5 border border-[#C9A227]/20 rounded-2xl p-5 mb-6">
+            <h3 className="text-[#C9A227] font-bold text-sm mb-3 flex items-center gap-2">
+              <Zap className="w-4 h-4" /> دخول سريع (وضع العرض)
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {DEMO_USERS.map((u) => (
+                <button
+                  key={u.role}
+                  onClick={() => doLogin(u.role, u.name, `${u.name.replace(/\s+/g, "").toLowerCase()}@demo.com`)}
+                  className={`px-3 py-2 rounded-xl border text-xs font-bold text-center transition hover:scale-105 ${ROLE_COLORS[u.role]}`}
+                >
+                  {u.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -97,52 +120,48 @@ function LoginForm() {
                 <button
                   key={r.key}
                   onClick={() => router.push(`/auth/login?role=${r.key}`)}
-                  className="group relative bg-white/5 hover:bg-[#C9A227]/10 border border-[#C9A227]/10 hover:border-[#C9A227]/40 rounded-2xl p-6 text-right transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A227]/10"
+                  className="group relative bg-white/5 hover:bg-[#C9A227]/10 border border-[#C9A227]/10 hover:border-[#C9A227]/40 rounded-2xl p-6 text-right transition-all duration-200"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${ROLE_COLORS[r.key]}`}>
                       <Icon className="w-7 h-7" />
                     </div>
-                    <span className="text-[10px] text-[#C9A227]/40 font-mono uppercase tracking-wider">{r.key}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-[#C9A227] mb-1 group-hover:text-[#e0b840] transition">{ROLE_LABELS[r.key]}</h3>
-                  <p className="text-xs text-[#C9A227]/50 leading-relaxed">{r.desc}</p>
+                  <h3 className="text-lg font-bold text-[#C9A227] mb-1">{ROLE_LABELS[r.key]}</h3>
+                  <p className="text-xs text-[#C9A227]/50">{r.desc}</p>
                 </button>
               );
             })}
           </div>
 
-          <p className="text-center text-[10px] text-[#C9A227]/30 mt-10">
-            v2.0 — Ayla Maintenance Management System
-          </p>
+          <p className="text-center text-[10px] text-[#C9A227]/30 mt-10">v2.0 — Ayla Maintenance</p>
         </div>
       </div>
     );
   }
 
-  // ─── Login Form View (role selected) ───
+  // ─── Form View ───
   return (
     <div className="min-h-screen bg-[#1A0F09] flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-md">
         <button onClick={() => router.push("/auth/login")} className="flex items-center gap-2 text-[#C9A227]/60 text-sm mb-6 hover:text-[#C9A227] transition">
-          <ArrowRight className="w-4 h-4" /> Back to roles
+          ← Back
         </button>
 
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-[#C9A227] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#C9A227]/20">
             <Wrench className="w-8 h-8 text-[#1A0F09]" />
           </div>
-          <h1 className="text-2xl font-bold text-[#C9A227]">Ayla Maintenance</h1>
-          <p className="text-[#C9A227]/50 text-sm mt-1">{ROLE_LABELS[role]}</p>
+          <h1 className="text-2xl font-bold text-[#C9A227]">{ROLE_LABELS[role]}</h1>
         </div>
 
         <div className="bg-white/5 backdrop-blur border border-[#C9A227]/10 rounded-2xl p-6 space-y-4">
           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold ${ROLE_COLORS[role]}`}>
-            <span>Role:</span> {ROLE_LABELS[role]}
+            Role: {ROLE_LABELS[role]}
           </div>
 
           <div>
-            <label className="text-xs text-[#C9A227]/60 block mb-1.5">Company / Organization</label>
+            <label className="text-xs text-[#C9A227]/60 block mb-1.5">Company</label>
             <select value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-[#2C1810] border border-[#C9A227]/20 text-[#C9A227] text-sm focus:outline-none focus:border-[#C9A227]">
               {tenants.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
             </select>
@@ -150,7 +169,7 @@ function LoginForm() {
 
           <div>
             <label className="text-xs text-[#C9A227]/60 block mb-1.5">Full Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mohammed Al-Saleh" className="w-full px-4 py-3 rounded-xl bg-[#2C1810] border border-[#C9A227]/20 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#C9A227]" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="w-full px-4 py-3 rounded-xl bg-[#2C1810] border border-[#C9A227]/20 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#C9A227]" />
           </div>
 
           <div>
@@ -174,7 +193,7 @@ export default function LoginPage() {
         <div className="w-8 h-8 border-2 border-[#C9A227] border-t-transparent rounded-full animate-spin" />
       </div>
     }>
-      <LoginForm />
+      <LoginInner />
     </Suspense>
   );
 }

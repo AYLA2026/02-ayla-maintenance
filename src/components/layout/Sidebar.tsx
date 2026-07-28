@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -149,7 +149,7 @@ export default function Sidebar() {
           )}
 
           {/* تسجيل الخروج */}
-          <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition mt-2">
+          <button onClick={() => { logout(); window.location.assign("/auth/login"); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition mt-2">
             <LogOut className="w-5 h-5 shrink-0" />
             <span className="flex-1 text-right">تسجيل الخروج</span>
           </button>

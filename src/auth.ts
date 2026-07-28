@@ -2,15 +2,12 @@
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import Credentials from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
+import { compare } from "bcryptjs"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
-  pages: {
-    signIn: "/auth/login",
-    error: "/auth/login",
-  },
+  pages: { signIn: "/auth/login", error: "/auth/login" },
   providers: [
     Credentials({
       name: "credentials",
@@ -28,11 +25,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         
         if (!user || !user.password) return null
         
-        const isValid = await bcrypt.compare(credentials.password as string, user.password)
+        const isValid = await compare(credentials.password as string, user.password)
         if (!isValid) return null
         
         const member = user.members[0]
-        
         return {
           id: user.id,
           name: user.name,

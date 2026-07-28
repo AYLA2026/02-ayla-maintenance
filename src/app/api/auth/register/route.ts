@@ -1,6 +1,8 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+﻿export const runtime = "nodejs"
+
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashPassword } from "@/lib/password";
+import { hash } from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +14,7 @@ export async function POST(req: NextRequest) {
     if (existing) {
       return NextResponse.json({ error: "Email already registered" }, { status: 400 });
     }
-    const hashed = await hashPassword(password);
+    const hashed = await hash(password, 12);
     const user = await prisma.user.create({
       data: { name, email, password: hashed },
     });

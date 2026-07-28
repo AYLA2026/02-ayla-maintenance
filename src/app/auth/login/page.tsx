@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [role, setRole] = useState<UserRole>("admin");
   const [tenantId, setTenantId] = useState("");
   const [showRoles, setShowRoles] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (tenants.length > 0 && !tenantId) {
@@ -28,21 +28,20 @@ export default function LoginPage() {
     }
   }, [tenants, tenantId]);
 
-  // fallback: إذا مسجل دخوله وما تحول — اضغط هنا
-  const doRedirect = (targetRole?: UserRole) => {
-    const r = targetRole || user?.role || role;
-    const target = r === "technician" ? "/technician-app" : "/";
-    if (typeof window !== "undefined") {
-      window.location.replace(target);
-    }
-  };
-
-  // محاولة تحويل تلقائي إذا مسجل
+  // تحويل تلقائي + تجهيز الرابط
   useEffect(() => {
-    if (!isLoading && user && typeof window !== "undefined") {
-      doRedirect(user.role);
+    console.log("State:", { isLoading, user: !!user, role: user?.role });
+    if (user && typeof window !== "undefined") {
+      const target = user.role === "technician" ? "/technician-app" : "/";
+      console.log("Setting redirect to:", target);
+      setRedirectUrl(target);
+      // محاولة تلقائية
+      setTimeout(() => {
+        console.log("Auto-navigating to:", target);
+        window.location.href = target;
+      }, 300);
     }
-  }, [isLoading, user]);
+  }, [user, isLoading]);
 
   const selectedTenant = tenants.find((t) => t.id === tenantId) || tenants[0];
   const selectedRoleData = ROLE_LIST.find((r) => r.key === role)!;
@@ -52,8 +51,6 @@ export default function LoginPage() {
     if (!name.trim()) { alert("الاسم مطلوب"); return; }
     if (!selectedTenant) { alert("اختر شركة"); return; }
 
-    setIsSubmitting(true);
-
     const newUser = {
       id: `usr-${Date.now()}`,
       name: name.trim(),
@@ -62,15 +59,22 @@ export default function LoginPage() {
       tenantId: selectedTenant.id,
     };
 
+    console.log("Login clicked:", newUser);
     login(newUser, selectedTenant);
 
-    // تحويل فوري بأقوى طريقة
-    doRedirect(role);
+    // تحويل يدوي مباشر
+    const target = role === "technician" ? "/technician-app" : "/";
+    console.log("Immediate redirect to:", target);
+    setRedirectUrl(target);
+    setTimeout(() => {
+      window.location.href = target;
+    }, 200);
   };
 
   const handleLogout = () => {
     logout();
-    if (typeof window !== "undefined") window.location.reload();
+    setRedirectUrl(null);
+    window.location.reload();
   };
 
   if (isLoading) {
@@ -81,18 +85,30 @@ export default function LoginPage() {
     );
   }
 
+  // إذا مسجل دخوله — اعرض صفحة تحويل مع رابط مباشر
   if (user) {
+    const target = redirectUrl || (user.role === "technician" ? "/technician-app" : "/");
     return (
-      <div className="min-h-screen bg-[#1A0F09] flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-[#1A0F09] flex flex-col items-center justify-center gap-4 p-4">
         <div className="w-8 h-8 border-2 border-[#C9A227] border-t-transparent rounded-full animate-spin" />
         <p className="text-[#C9A227] text-sm">جاري التحويل...</p>
-        <button
-          onClick={() => doRedirect()}
-          className="px-4 py-2 rounded-lg bg-[#C9A227] text-[#1A0F09] text-xs font-bold"
+        
+        {/* رابط مباشر — أقوى من أي كود */}
+        <a 
+          href={target}
+          className="px-6 py-3 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition"
         >
-          اضغط هنا إذا ما تحول
-        </button>
-        <button onClick={handleLogout} className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1">
+          اضغط هنا للدخول للمنصة
+        </a>
+
+        <p className="text-[10px] text-gray-500">
+          إذا ما تحول تلقائياً، اضغط الزر فوق
+        </p>
+
+        <button 
+          onClick={handleLogout}
+          className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-600/30 transition"
+        >
           <LogOut className="w-3 h-3" /> تسجيل الخروج
         </button>
       </div>
@@ -182,17 +198,10 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleLogin}
-            disabled={isSubmitting}
-            className="w-full py-3 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition flex items-center justify-center gap-2"
           >
-            {isSubmitting ? (
-              <span className="w-5 h-5 border-2 border-[#1A0F09] border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <UserCheck className="w-4 h-4" />
-                تسجيل الدخول
-              </>
-            )}
+            <UserCheck className="w-4 h-4" />
+            تسجيل الدخول
           </button>
         </div>
 

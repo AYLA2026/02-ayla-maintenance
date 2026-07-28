@@ -1,31 +1,23 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+﻿import { auth } from "@/auth"
+import { NextResponse } from "next/server"
 
-export default withAuth(
-  function middleware(req) {
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized({ req, token }) {
-        if (token) return true;
-        return false;
-      },
-    },
-    pages: {
-      signIn: "/auth/login",
-    },
+export default auth((req) => {
+  const { nextUrl } = req
+  const isLoggedIn = !!req.auth
+  const isAuthPage = nextUrl.pathname.startsWith("/auth")
+  const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth")
+  const isPublic = nextUrl.pathname === "/" || nextUrl.pathname.startsWith("/_next") || nextUrl.pathname.includes(".")
+  
+  if (isApiAuthRoute) return NextResponse.next()
+  if (!isLoggedIn && !isAuthPage && !isPublic) {
+    return NextResponse.redirect(new URL("/auth/login", nextUrl))
   }
-);
+  if (isLoggedIn && isAuthPage) {
+    return NextResponse.redirect(new URL("/", nextUrl))
+  }
+  return NextResponse.next()
+})
 
-// الصفحات التي تحتاج حماية
 export const config = {
-  matcher: [
-    "/",
-    "/projects/:path*",
-    "/schools/:path*",
-    "/workforce/:path*",
-    "/reports/:path*",
-    "/dashboard/:path*",
-  ],
-};
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|svg|css|js)$).*)"],
+}

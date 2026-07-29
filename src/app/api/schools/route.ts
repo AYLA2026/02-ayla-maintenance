@@ -1,61 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
+﻿import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  try {
-    const schools = await prisma.school.findMany({
-      include: {
-        supervisors: {
-          include: { supervisor: { select: { id: true, name: true, phone: true } } }
-        },
-        _count: { select: { reports: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-    return NextResponse.json(schools);
-  } catch (error) {
-    console.error('GET schools error:', error);
-    return NextResponse.json([], { status: 200 });
-  }
+  const schools = await prisma.school.findMany({ orderBy: { createdAt: "desc" } });
+  return NextResponse.json(schools);
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-
-    const existing = await prisma.school.findFirst({
-      where: {
-        OR: [
-          { referenceNo: data.referenceNo },
-          { whatsappNo: data.whatsappNo }
-        ]
-      }
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { error: 'الرقم المرجعي أو واتساب مسجل مسبقاً' },
-        { status: 400 }
-      );
-    }
-
-    const school = await prisma.school.create({
-      data: {
-        name: data.name,
-        referenceNo: data.referenceNo,
-        address: data.address,
-        building: data.building,
-        phone: data.phone,
-        whatsappNo: data.whatsappNo,
-      }
-    });
-
+    const body = await req.json();
+    const school = await prisma.school.create({ data: body });
     return NextResponse.json(school, { status: 201 });
-  } catch (error) {
-    console.error('POST school error:', error);
-    return NextResponse.json(
-      { error: 'فشل إنشاء المدرسة' },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

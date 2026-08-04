@@ -1,17 +1,23 @@
 ﻿import type { Metadata } from "next";
-import ClientProviders from "@/components/ClientProviders";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
+import AppLayout from "@/components/layout/AppLayout";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Ayla Maintenance",
-  description: "Multi-Tenant Maintenance Management System",
+  title: "آيلا للصيانة",
+  description: "نظام إدارة الصيانة الذكي",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
-      <body className="bg-[#FAF7F2]">
-        <ClientProviders>{children}</ClientProviders>
+      <body className={inter.className}>
+        <AuthProvider>
+          <AppLayout>{children}</AppLayout>
+        </AuthProvider>
       </body>
     </html>
   );

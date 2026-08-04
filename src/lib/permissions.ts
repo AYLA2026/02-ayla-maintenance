@@ -9,8 +9,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { label: "لوحة التحكم", href: "/", iconName: "LayoutDashboard", roles: ["system_admin", "company_manager", "supervisor", "site_engineer", "technician", "visitor"] },
-  { label: "البلاغات", href: "/complaints/inbox", iconName: "Inbox", roles: ["system_admin", "company_manager", "supervisor", "site_engineer", "technician", "visitor"] },
-  { label: "البلاغات الذكية", href: "/complaints/distributor", iconName: "Zap", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },
+  { label: "البلاغات", href: "/complaints", iconName: "Inbox", roles: ["system_admin", "company_manager", "supervisor", "site_engineer", "technician", "visitor"] },
   { label: "الجدولة الدورية", href: "/schedule", iconName: "Calendar", roles: ["system_admin", "company_manager", "supervisor"] },
   { label: "المخازن", href: "/inventory", iconName: "Package", roles: ["system_admin", "company_manager", "supervisor"] },
   { label: "المباني", href: "/buildings", iconName: "Building2", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },
@@ -23,8 +22,8 @@ export const NAV_ITEMS: NavItem[] = [
 
 export function canAccess(role: UserRole | undefined, href: string): boolean {
   if (!role) return false;
-  if (href === "/auth/login") return true;
-  const item = NAV_ITEMS.find((n) => n.href === href);
+  if (href === "/auth/login" || href.startsWith("/auth/")) return true;
+  const item = NAV_ITEMS.find((n) => href.startsWith(n.href));
   if (!item) return true;
   return item.roles.includes(role);
 }

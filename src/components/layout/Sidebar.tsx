@@ -104,7 +104,7 @@ export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolea
                 </Link>
               )}
 
-              {/* القائمة الفرعية (ستارة) */}
+              {/* القائمة الفرعية */}
               {sub && isOpen && !collapsed && (
                 <div className="mr-3 mt-2 space-y-1 border-r-2 border-[#C9A227]/30 pr-3">
                   {sub.map((s) => {

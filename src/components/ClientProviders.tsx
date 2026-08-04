@@ -1,17 +1,19 @@
 ﻿"use client";
 
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/lib/auth-context";
 import Sidebar from "@/components/layout/Sidebar";
-import { usePathname } from "next/navigation";
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const hideSidebar = pathname?.startsWith("/auth") || pathname?.startsWith("/technician-app");
+  const [collapsed, setCollapsed] = useState(false);
+  const hideSidebar = pathname === "/auth/login" || pathname.startsWith("/auth/");
 
   return (
     <AuthProvider>
-      {!hideSidebar && <Sidebar />}
-      <main className={hideSidebar ? "min-h-screen" : "min-h-screen mr-0 lg:mr-64"}>
+      {!hideSidebar && <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />}
+      <main className={`min-h-screen transition-all duration-300 ${hideSidebar ? "" : collapsed ? "mr-20" : "mr-64"}`}>
         {children}
       </main>
     </AuthProvider>

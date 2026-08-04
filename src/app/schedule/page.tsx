@@ -1,303 +1,246 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import {
-  Calendar, Shield, School, CheckCircle, Clock
-} from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { Calendar, Users, Building2, Wrench, RotateCcw, Save, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 
-interface Team {
-  id: string;
-  name: string;
-  supervisor: string;
-  schools: string[];
-}
-
-interface DaySchedule {
-  day: number;
+interface ScheduleDay {
+  date: string;
   dayName: string;
+  isFriday: boolean;
+  teamId: string | null;
   schools: string[];
-  completed: boolean;
+  taskType: string;
+  status: "مجدول" | "منفذ" | "متأخر";
 }
 
-interface MonthSchedule {
-  teamId: string;
-  month: string;
-  days: DaySchedule[];
-}
+const SCHOOLS_POOL = [
+  "مجمع مدارس الأمل", "مدرسة النور الابتدائية", "مدرسة المستقبل الثانوية",
+  "مدرسة الابتكار المتوسطة", "مدرسة الفجر الابتدائية", "مدرسة النخبة الثانوية",
+  "مجمع الرواد التعليمي", "مدرسة الرياض الابتدائية", "مدرسة الفيصلية المتوسطة",
+  "مدرسة الغد الثانوية", "مجمع العلوم الحديثة", "مدرسة الأمل الخاصة",
+  "مدرسة التحفيظ الابتدائية", "مدرسة النور الثانوية", "مدرسة السلام المتوسطة",
+  "مجمع التربية النموذجي", "مدرسة الابتكار الابتدائية", "مدرسة الفتح الثانوية",
+  "مدرسة الزهراء المتوسطة", "مدرسة الصفوة الابتدائية", "مجمع الملك سلمان",
+  "مدرسة العليا الثانوية", "مدرسة الروضة الابتدائية", "مدرسة المجد المتوسطة",
+  "مدرسة الإبداع الثانوية", "مدرسة السعادة الابتدائية", "مدرسة التميز المتوسطة",
+  "مدرسة الأمجاد الثانوية", "مدرسة الوسطى الابتدائية", "مدرسة الغيث المتوسطة",
+];
 
-const DAY_NAMES = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const TEAMS = [
+  { id: "t1", name: "فريق الصيانة أ", members: 4, status: "متاح" as const },
+  { id: "t2", name: "فريق الصيانة ب", members: 3, status: "متاح" as const },
+  { id: "t3", name: "فريق التكييف ب", members: 2, status: "مشغول" as const },
+  { id: "t4", name: "فريق النظافة ج", members: 6, status: "متاح" as const },
+  { id: "t5", name: "فريق الطوارئ", members: 3, status: "متاح" as const },
+];
 
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month, 0).getDate();
-}
+const TASK_TYPES = ["صيانة عامة", "كهرباء", "سباكة", "تكييف", "نظافة", "فحص دوري"];
 
-function generateSchedule(team: Team, year: number, month: number): DaySchedule[] {
-  const daysCount = getDaysInMonth(year, month);
-  const schools = [...team.schools];
-  const days: DaySchedule[] = [];
-  let schoolIndex = 0;
-
-  for (let d = 1; d <= daysCount; d++) {
-    const date = new Date(year, month - 1, d);
+function getDaysInMonth(year: number, month: number): ScheduleDay[] {
+  const days: ScheduleDay[] = [];
+  const date = new Date(year, month - 1, 1);
+  while (date.getMonth() === month - 1) {
     const dayOfWeek = date.getDay();
-    const dayName = DAY_NAMES[dayOfWeek];
-
-    if (dayOfWeek === 5) {
-      days.push({ day: d, dayName, schools: [], completed: false });
-      continue;
-    }
-
-    const assigned: string[] = [];
-    const perDay = Math.max(1, Math.ceil(schools.length / (daysCount - Math.floor(daysCount / 7))));
-    for (let i = 0; i < perDay && schoolIndex < schools.length; i++) {
-      assigned.push(schools[schoolIndex]);
-      schoolIndex++;
-    }
-    if (schoolIndex >= schools.length) schoolIndex = 0;
-
-    days.push({ day: d, dayName, schools: assigned, completed: false });
+    const iso = date.toISOString().split("T")[0];
+    days.push({
+      date: iso,
+      dayName: date.toLocaleDateString("ar-SA", { weekday: "long" }),
+      isFriday: dayOfWeek === 5,
+      teamId: null,
+      schools: [],
+      taskType: "صيانة عامة",
+      status: "مجدول",
+    });
+    date.setDate(date.getDate() + 1);
   }
   return days;
 }
 
 export default function SchedulePage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [schedules, setSchedules] = useState<MonthSchedule[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<string>("");
+  const { tenant } = useAuth();
   const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(7);
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
-  const [showTeamAdd, setShowTeamAdd] = useState(false);
-  const [teamForm, setTeamForm] = useState({ name: "", supervisor: "", schools: "" });
+  const [month, setMonth] = useState(8);
+  const [schedule, setSchedule] = useState<ScheduleDay[]>([]);
+  const [saved, setSaved] = useState(false);
 
-  const addTeam = () => {
-    if (!teamForm.name.trim() || !teamForm.supervisor.trim()) return alert("اسم الفرقة والمشرف مطلوبان");
-    const schools = teamForm.schools.split(",").map((s) => s.trim()).filter(Boolean);
-    const newTeam: Team = {
-      id: `schteam-${Date.now()}`,
-      name: teamForm.name,
-      supervisor: teamForm.supervisor,
-      schools,
-    };
-    setTeams((prev) => [...prev, newTeam]);
-    setTeamForm({ name: "", supervisor: "", schools: "" });
-    setShowTeamAdd(false);
+  useEffect(() => {
+    loadSchedule(year, month);
+  }, []);
+
+  const loadSchedule = (y: number, m: number) => {
+    const key = `ayla-schedule-${y}-${m}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      setSchedule(JSON.parse(saved));
+    } else {
+      setSchedule(getDaysInMonth(y, m));
+    }
   };
 
-  const generateForTeam = (teamId: string) => {
-    const team = teams.find((t) => t.id === teamId);
-    if (!team) return;
-    const days = generateSchedule(team, year, month);
-    setSchedules((prev) => {
-      const filtered = prev.filter((s) => !(s.teamId === teamId && s.month === `${year}-${month}`));
-      return [...filtered, { teamId, month: `${year}-${month}`, days }];
+  const generateSchedule = () => {
+    const days = getDaysInMonth(year, month);
+    const availableTeams = TEAMS.filter((t) => t.status !== "خارج الخدمة");
+    if (availableTeams.length === 0) return;
+
+    let teamIndex = 0;
+    let schoolIndex = 0;
+    const chunkSize = 25;
+
+    const updated = days.map((day) => {
+      if (day.isFriday) return { ...day, teamId: null, schools: [], taskType: "راحة" };
+
+      const team = availableTeams[teamIndex % availableTeams.length];
+      const schoolsForDay: string[] = [];
+      const dailyCount = Math.ceil(chunkSize / 20);
+
+      for (let i = 0; i < dailyCount && schoolIndex < SCHOOLS_POOL.length; i++) {
+        schoolsForDay.push(SCHOOLS_POOL[schoolIndex]);
+        schoolIndex++;
+      }
+
+      const task = TASK_TYPES[teamIndex % TASK_TYPES.length];
+      teamIndex++;
+      return { ...day, teamId: team.id, schools: schoolsForDay, taskType: task };
     });
+
+    setSchedule(updated);
+    setSaved(false);
   };
 
-  const toggleDay = (teamId: string, day: number) => {
-    setSchedules((prev) =>
-      prev.map((s) => {
-        if (s.teamId !== teamId || s.month !== `${year}-${month}`) return s;
-        return {
-          ...s,
-          days: s.days.map((d) => (d.day === day ? { ...d, completed: !d.completed } : d)),
-        };
-      })
-    );
+  const saveSchedule = () => {
+    const key = `ayla-schedule-${year}-${month}`;
+    localStorage.setItem(key, JSON.stringify(schedule));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
-  const currentSchedule = useMemo(() => {
-    return schedules.find((s) => s.teamId === selectedTeam && s.month === `${year}-${month}`);
-  }, [schedules, selectedTeam, year, month]);
+  const updateDay = (index: number, updates: Partial<ScheduleDay>) => {
+    const next = [...schedule];
+    next[index] = { ...next[index], ...updates };
+    setSchedule(next);
+    setSaved(false);
+  };
 
-  const selectedTeamData = teams.find((t) => t.id === selectedTeam);
+  const workDays = schedule.filter((d) => !d.isFriday);
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <h1 className="text-2xl lg:text-3xl font-bold text-[#2C1810] flex items-center gap-3" style={{ fontFamily: "Tajawal, sans-serif" }}>
-            <Calendar className="w-8 h-8 text-[#C9A227]" /> الصيانة المجدولة
-          </h1>
-          <div className="flex gap-2">
-            <button onClick={() => setShowTeamAdd(true)} className="px-4 py-2 rounded-xl bg-[#1A0F09] text-[#C9A227] font-bold text-sm flex items-center gap-2 hover:bg-[#2C1810] transition">
-              <Shield className="w-4 h-4" /> إضافة فرقة
-            </button>
-          </div>
+    <div className="space-y-6" dir="rtl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-[#1A0F09]">جدولة الصيانة الدورية</h1>
+          <p className="text-gray-500 text-sm mt-1">توزيع 25 مدرسة لكل فرقة شهرياً — {tenant?.nameAr}</p>
         </div>
-
-        <div className="bg-white rounded-2xl border border-[#C9A227]/10 p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">الفرقة</label>
-              <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
-                <option value="">اختر الفرقة</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name} — {t.supervisor}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">السنة</label>
-              <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">الشهر</label>
-              <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={() => selectedTeam && generateForTeam(selectedTeam)}
-              disabled={!selectedTeam}
-              className="px-4 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition disabled:opacity-50"
-            >
-              توليد الجدول
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <button onClick={generateSchedule} className="flex items-center gap-2 px-4 py-2.5 bg-[#C9A227] text-[#1A0F09] rounded-xl font-bold text-sm hover:bg-[#b89420] transition">
+            <RotateCcw className="w-4 h-4" /> توليد جدول {month}/{year}
+          </button>
+          <button onClick={saveSchedule} className="flex items-center gap-2 px-4 py-2.5 bg-[#1A0F09] text-white rounded-xl font-bold text-sm hover:bg-[#3d2317] transition">
+            {saved ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Save className="w-4 h-4" />}
+            {saved ? "تم الحفظ" : "حفظ الجدول"}
+          </button>
         </div>
-
-        {selectedTeamData && (
-          <div className="bg-white rounded-2xl border border-[#C9A227]/10 p-4 mb-6 flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[#C9A227]" />
-              <span className="font-bold text-[#2C1810]">{selectedTeamData.name}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="font-bold">المشرف:</span> {selectedTeamData.supervisor}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <School className="w-4 h-4 text-green-600" />
-              <span>{selectedTeamData.schools.length} مدرسة</span>
-            </div>
-            <div className="flex-1" />
-            <div className="flex gap-2">
-              <button onClick={() => setViewMode("calendar")} className={`px-3 py-1 rounded-lg text-xs font-bold ${viewMode === "calendar" ? "bg-[#C9A227] text-[#1A0F09]" : "bg-gray-100 text-gray-600"}`}>تقويم</button>
-              <button onClick={() => setViewMode("list")} className={`px-3 py-1 rounded-lg text-xs font-bold ${viewMode === "list" ? "bg-[#C9A227] text-[#1A0F09]" : "bg-gray-100 text-gray-600"}`}>قائمة</button>
-            </div>
-          </div>
-        )}
-
-        {!currentSchedule && selectedTeam && (
-          <div className="bg-white rounded-2xl border border-[#C9A227]/10 p-12 text-center">
-            <Calendar className="w-16 h-16 text-[#C9A227]/20 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">اضغط "توليد الجدول" لإنشاء جدول الصيانة</p>
-          </div>
-        )}
-
-        {currentSchedule && viewMode === "calendar" && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-            {currentSchedule.days.map((d) => (
-              <div
-                key={d.day}
-                onClick={() => d.schools.length > 0 && toggleDay(selectedTeam, d.day)}
-                className={`rounded-2xl border p-4 min-h-[140px] transition cursor-pointer ${
-                  d.dayName === "الجمعة"
-                    ? "bg-gray-100 border-gray-200 opacity-60"
-                    : d.completed
-                    ? "bg-green-50 border-green-200"
-                    : "bg-white border-[#C9A227]/10 hover:shadow-md"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-lg font-bold text-[#2C1810]">{d.day}</span>
-                  <span className="text-[10px] text-gray-400">{d.dayName}</span>
-                </div>
-                {d.dayName === "الجمعة" ? (
-                  <div className="text-center text-xs text-gray-400 mt-4">إجازة</div>
-                ) : (
-                  <>
-                    <div className="space-y-1 max-h-20 overflow-y-auto">
-                      {d.schools.map((s, i) => (
-                        <div key={i} className="text-[10px] text-gray-600 truncate flex items-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-[#C9A227]" /> {s}
-                        </div>
-                      ))}
-                      {d.schools.length === 0 && <div className="text-[10px] text-gray-400">لا توجد مدارس</div>}
-                    </div>
-                    {d.schools.length > 0 && (
-                      <div className="mt-2 flex items-center gap-1">
-                        {d.completed ? (
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Clock className="w-4 h-4 text-yellow-500" />
-                        )}
-                        <span className="text-[10px] font-bold">{d.completed ? "تمت" : "معلقة"}</span>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {currentSchedule && viewMode === "list" && (
-          <div className="bg-white rounded-2xl border border-[#C9A227]/10 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-[#FAF7F2]">
-                <tr>
-                  <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">اليوم</th>
-                  <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">التاريخ</th>
-                  <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">المدارس</th>
-                  <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">الحالة</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentSchedule.days.filter((d) => d.dayName !== "الجمعة").map((d) => (
-                  <tr key={d.day} className="border-t border-[#C9A227]/5 hover:bg-[#FAF7F2]/50 transition">
-                    <td className="px-4 py-3 font-bold text-[#2C1810]">{d.dayName}</td>
-                    <td className="px-4 py-3 text-gray-600">{d.day} / {month} / {year}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {d.schools.map((s, i) => (
-                          <span key={i} className="px-2 py-0.5 rounded-lg bg-[#C9A227]/10 text-[#5C3A2A] text-[10px] font-bold">{s}</span>
-                        ))}
-                        {d.schools.length === 0 && <span className="text-xs text-gray-400">—</span>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => toggleDay(selectedTeam, d.day)} className={`px-3 py-1 rounded-lg text-xs font-bold transition ${d.completed ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                        {d.completed ? "تمت" : "معلقة"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {!selectedTeam && teams.length === 0 && (
-          <div className="bg-white rounded-2xl border border-[#C9A227]/10 p-12 text-center">
-            <Shield className="w-16 h-16 text-[#C9A227]/20 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">لا توجد فرق مسجلة</p>
-            <button onClick={() => setShowTeamAdd(true)} className="px-6 py-3 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold hover:bg-[#b89420] transition">إضافة فرقة</button>
-          </div>
-        )}
       </div>
 
-      {showTeamAdd && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowTeamAdd(false)}>
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#2C1810]">إضافة فرقة للصيانة المجدولة</h2>
-              <button onClick={() => setShowTeamAdd(false)} className="p-1 rounded-lg hover:bg-gray-100"><span className="text-gray-500 text-xl">×</span></button>
-            </div>
-            <div className="grid grid-cols-1 gap-3">
-              <input placeholder="اسم الفرقة *" value={teamForm.name} onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-              <input placeholder="اسم المشرف *" value={teamForm.supervisor} onChange={(e) => setTeamForm({ ...teamForm, supervisor: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-              <textarea placeholder="المدارس (افصل بينها بفاصلة)" value={teamForm.schools} onChange={(e) => setTeamForm({ ...teamForm, schools: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227] h-24 resize-none" />
-            </div>
-            <div className="mt-6 flex gap-3 justify-end">
-              <button onClick={() => setShowTeamAdd(false)} className="px-5 py-2 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition">إلغاء</button>
-              <button onClick={addTeam} className="px-5 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition">حفظ الفرقة</button>
-            </div>
-          </div>
+      {/* اختيار الشهر */}
+      <div className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <Calendar className="w-5 h-5 text-[#C9A227]" />
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-[#1A0F09]">السنة</label>
+          <input type="number" value={year} onChange={(e) => { const y = Number(e.target.value); setYear(y); loadSchedule(y, month); }}
+            className="w-20 px-3 py-2 rounded-xl border border-gray-200 focus:border-[#C9A227] outline-none text-sm" />
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-[#1A0F09]">الشهر</label>
+          <select value={month} onChange={(e) => { const m = Number(e.target.value); setMonth(m); loadSchedule(year, m); }}
+            className="px-3 py-2 rounded-xl border border-gray-200 focus:border-[#C9A227] outline-none text-sm">
+            {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
+          </select>
+        </div>
+        <div className="mr-auto text-xs text-gray-500">أيام العمل: {workDays.length} | الجمعة: {schedule.filter((d) => d.isFriday).length}</div>
+      </div>
+
+      {/* ملخص الفرق */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {TEAMS.map((t) => {
+          const assignedDays = schedule.filter((d) => d.teamId === t.id).length;
+          return (
+            <div key={t.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#1A0F09] flex items-center justify-center text-[#C9A227] font-bold text-xs">{t.name.charAt(t.name.length - 1)}</div>
+              <div>
+                <p className="text-sm font-bold text-[#1A0F09]">{t.name}</p>
+                <p className="text-[10px] text-gray-500">{assignedDays} أيام • {t.members} فنيين</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* الجدول */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[#FAF7F2] text-gray-500">
+                <th className="text-right py-3 px-4 font-bold">اليوم</th>
+                <th className="text-right py-3 px-4 font-bold">التاريخ</th>
+                <th className="text-right py-3 px-4 font-bold">الفريق</th>
+                <th className="text-right py-3 px-4 font-bold">المهمة</th>
+                <th className="text-right py-3 px-4 font-bold">المدارس</th>
+                <th className="text-right py-3 px-4 font-bold">الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedule.map((day, idx) => {
+                const team = TEAMS.find((t) => t.id === day.teamId);
+                return (
+                  <tr key={day.date} className={`border-b border-gray-50 ${day.isFriday ? "bg-gray-50 opacity-60" : "hover:bg-[#FAF7F2]"} transition`}>
+                    <td className="py-3 px-4 font-bold text-[#1A0F09]">
+                      {day.dayName}
+                      {day.isFriday && <span className="text-[10px] text-red-500 mr-1">(إجازة)</span>}
+                    </td>
+                    <td className="py-3 px-4 text-gray-500 font-mono text-xs">{day.date}</td>
+                    <td className="py-3 px-4">
+                      {day.isFriday ? <span className="text-gray-400 text-xs">—</span> : (
+                        <select value={day.teamId || ""} onChange={(e) => updateDay(idx, { teamId: e.target.value || null })}
+                          className="px-2 py-1 rounded-lg border border-gray-200 text-xs focus:border-[#C9A227] outline-none bg-white">
+                          <option value="">اختر فريق</option>
+                          {TEAMS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      {day.isFriday ? <span className="text-gray-400 text-xs">—</span> : (
+                        <select value={day.taskType} onChange={(e) => updateDay(idx, { taskType: e.target.value })}
+                          className="px-2 py-1 rounded-lg border border-gray-200 text-xs focus:border-[#C9A227] outline-none bg-white">
+                          {TASK_TYPES.map((tt) => <option key={tt} value={tt}>{tt}</option>)}
+                        </select>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      {day.isFriday ? <span className="text-gray-400 text-xs">—</span> : (
+                        <div className="flex flex-wrap gap-1">
+                          {day.schools.length > 0 ? day.schools.map((s, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-bold">{s}</span>
+                          )) : <span className="text-gray-400 text-xs">لا توجد</span>}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <select value={day.status} onChange={(e) => updateDay(idx, { status: e.target.value as any })}
+                        className={`px-2 py-1 rounded-lg text-xs font-bold border outline-none ${day.status === "منفذ" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : day.status === "متأخر" ? "bg-red-100 text-red-700 border-red-200" : "bg-amber-100 text-amber-700 border-amber-200"}`}>
+                        <option value="مجدول">مجدول</option>
+                        <option value="منفذ">منفذ</option>
+                        <option value="متأخر">متأخر</option>
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

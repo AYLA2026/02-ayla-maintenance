@@ -2,101 +2,108 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type UserRole = "super_admin" | "admin" | "supervisor" | "technician" | "viewer";
+export type UserRole = "system_admin" | "company_manager" | "site_engineer" | "supervisor" | "technician" | "visitor";
 
-export interface Tenant {
+interface Tenant {
   id: string;
   name: string;
-  color?: string;
+  nameAr: string;
+  color: string;
+  logo?: string;
 }
 
-export interface AuthUser {
+interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   tenantId: string;
+  tenantName: string;
+  image?: string;
 }
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: User | null;
   tenant: Tenant | null;
   tenants: Tenant[];
-  login: (user: AuthUser, tenant: Tenant) => void;
+  loading: boolean;
+  login: (tenantId: string, role: UserRole, name: string) => void;
   logout: () => void;
-  isLoading: boolean;
+  isAllowed: (roles: UserRole[]) => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const DEFAULT_TENANTS: Tenant[] = [
-  { id: "ayla-main", name: "آيلا للصيانة", color: "#C9A227" },
-  { id: "demo-1", name: "شركة النور", color: "#2563eb" },
+const TENANTS: Tenant[] = [
+  { id: "ayla-main", name: "Ayla Maintenance", nameAr: "آيلا للصيانة", color: "#C9A227" },
+  { id: "demo-corp", name: "Demo Corp", nameAr: "شركة تجريبية", color: "#2563eb" },
+  { id: "future-co", name: "Future Co", nameAr: "المستقبل", color: "#059669" },
 ];
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [tenants] = useState<Tenant[]>(DEFAULT_TENANTS);
-  const [isLoading, setIsLoading] = useState(true);
+const AuthContext = createContext<AuthContextType>({
+  user: null, tenant: null, tenants: TENANTS, loading: true,
+  login: () => {}, logout: () => {}, isAllowed: () => false,
+});
 
-  // فحص الجلسة عند التحميل
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    async function checkSession() {
+    setMounted(true);
+    const saved = localStorage.getItem("ayla-session");
+    if (saved) {
       try {
-        const res = await fetch("/api/me");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setUser(data.user);
-            setTenant(data.tenant || DEFAULT_TENANTS[0]);
-          }
-        }
-      } catch {
-        // ignore
-      }
-      // fallback: localStorage demo
-      if (typeof window !== "undefined") {
-        const saved = localStorage.getItem("ayla_user");
-        const savedTenant = localStorage.getItem("ayla_tenant");
-        if (saved && !user) {
-          setUser(JSON.parse(saved));
-          if (savedTenant) setTenant(JSON.parse(savedTenant));
-        }
-      }
-      setIsLoading(false);
+        const s = JSON.parse(saved);
+        setUser(s.user);
+        const t = TENANTS.find(x => x.id === s.user.tenantId) || TENANTS[0];
+        setTenant(t);
+        document.cookie = `ayla-auth=true; path=/; max-age=86400; SameSite=Lax`;
+        document.cookie = `ayla-tenant=${s.user.tenantId}; path=/; max-age=86400; SameSite=Lax`;
+      } catch {}
     }
-    checkSession();
+    setLoading(false);
   }, []);
 
-  const login = (newUser: AuthUser, newTenant: Tenant) => {
-    setUser(newUser);
-    setTenant(newTenant);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("ayla_user", JSON.stringify(newUser));
-      localStorage.setItem("ayla_tenant", JSON.stringify(newTenant));
-    }
+  const login = (tenantId: string, role: UserRole, name: string) => {
+    const t = TENANTS.find(x => x.id === tenantId) || TENANTS[0];
+    const u: User = {
+      id: `u-${Date.now()}`,
+      name: name || "User",
+      email: `${role}@${tenantId}.local`,
+      role,
+      tenantId: t.id,
+      tenantName: t.nameAr,
+    };
+    setUser(u);
+    setTenant(t);
+    localStorage.setItem("ayla-session", JSON.stringify({ user: u }));
+    document.cookie = `ayla-auth=true; path=/; max-age=86400; SameSite=Lax`;
+    document.cookie = `ayla-tenant=${t.id}; path=/; max-age=86400; SameSite=Lax`;
   };
 
   const logout = () => {
     setUser(null);
     setTenant(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("ayla_user");
-      localStorage.removeItem("ayla_tenant");
-    }
-    fetch("/api/logout", { method: "POST" }).catch(() => {});
+    localStorage.removeItem("ayla-session");
+    document.cookie = `ayla-auth=; path=/; max-age=0`;
+    document.cookie = `ayla-tenant=; path=/; max-age=0`;
+    window.location.href = "/auth/login";
   };
 
+  const isAllowed = (roles: UserRole[]) => {
+    if (!user) return false;
+    if (user.role === "system_admin") return true;
+    return roles.includes(user.role);
+  };
+
+  if (!mounted) return <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#C9A227] border-t-transparent rounded-full animate-spin" /></div>;
+
   return (
-    <AuthContext.Provider value={{ user, tenant, tenants, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, tenant, tenants: TENANTS, loading, login, logout, isAllowed }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-}
+export const useAuth = () => useContext(AuthContext);

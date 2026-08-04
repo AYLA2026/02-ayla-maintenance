@@ -1,496 +1,130 @@
-"use client";
+﻿"use client";
 
-import { useState, useRef, useMemo, useEffect } from "react";
-import {
-  Inbox, Plus, X, Download, Upload, Search, Filter,
-  AlertCircle, Clock, CheckCircle, UserCheck, Phone,
-  MapPin, Calendar, Wrench, ChevronDown, Trash2, Eye
-} from "lucide-react";
-
-type Priority = "عاجل" | "عادي" | "منخفض";
-type Status = "جديد" | "قيد المراجعة" | "تم التوزيع" | "قيد العمل" | "في الانتظار قطع غيار" | "تم الإنجاز" | "مغلق";
-type IssueType = "كهرباء" | "سباكة" | "تكييف" | "معماري" | "نظافة" | "أخرى";
-
-interface Complaint {
-  id: string;
-  school: string;
-  location: string;
-  issueType: IssueType;
-  description: string;
-  priority: Priority;
-  status: Status;
-  assignedTo: string;
-  team: string;
-  date: string;
-  reporter: string;
-  phone: string;
-  notes: string;
-}
-
-const exportWithHeader = async (data: any[][], filename: string, sheetName: string) => {
-  const XLSX = await import("xlsx");
-  const headerRows = [
-    ["Ayla Maintenance"],
-    ["م. محمد عبد الرحمن"],
-    [new Date().toLocaleDateString("ar-SA")],
-    [],
-  ];
-  const allRows = [...headerRows, ...data];
-  const ws = XLSX.utils.aoa_to_sheet(allRows);
-  ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: data[0].length - 1 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: data[0].length - 1 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: data[0].length - 1 } },
-  ];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  XLSX.writeFile(wb, filename);
-};
-
-const ISSUE_TYPES: IssueType[] = ["كهرباء", "سباكة", "تكييف", "معماري", "نظافة", "أخرى"];
-const PRIORITIES: Priority[] = ["عاجل", "عادي", "منخفض"];
-const STATUSES: Status[] = ["جديد", "قيد المراجعة", "تم التوزيع", "قيد العمل", "في الانتظار قطع غيار", "تم الإنجاز", "مغلق"];
-
-const DEFAULT_COMPLAINTS: Complaint[] = [
-  {
-    id: "BLG-001",
-    school: "مدرسة النور الابتدائية",
-    location: "الرياض - حي النزهة",
-    issueType: "سباكة",
-    description: "تسريب مياه في دورة المياه الرئيسية بالطابق الأول",
-    priority: "عاجل",
-    status: "جديد",
-    assignedTo: "",
-    team: "",
-    date: "2026-07-27",
-    reporter: "أحمد العتيبي",
-    phone: "0551234567",
-    notes: "",
-  },
-  {
-    id: "BLG-002",
-    school: "مدرسة الفجر المتوسطة",
-    location: "الرياض - حي الروضة",
-    issueType: "تكييف",
-    description: "تكييف غرفة المعلمين لا يعمل منذ 3 أيام",
-    priority: "عادي",
-    status: "قيد العمل",
-    assignedTo: "خالد السبيعي",
-    team: "فرقة الصيانة أ",
-    date: "2026-07-26",
-    reporter: "محمد الدوسري",
-    phone: "0559876543",
-    notes: "تم الفحص الأولي وتحديد العطل في الكمبرسر",
-  },
-  {
-    id: "BLG-003",
-    school: "مدرسة الرواد الثانوية",
-    location: "الرياض - حي العليا",
-    issueType: "كهرباء",
-    description: "إنارة الملعب الخارجي معطلة بالكامل",
-    priority: "منخفض",
-    status: "تم الإنجاز",
-    assignedTo: "سعد الحربي",
-    team: "فرقة الكهرباء",
-    date: "2026-07-25",
-    reporter: "عبدالله القحطاني",
-    phone: "0555551212",
-    notes: "تم تغيير اللمبات واختبار النظام بنجاح",
-  },
-];
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { Plus, Wifi, WifiOff, RotateCcw, CheckCircle } from "lucide-react";
+import { getOfflineComplaints, addOfflineComplaint, distributeComplaints, seedDemoData, updateComplaint, type OfflineComplaint } from "@/lib/offline-store";
 
 export default function ComplaintsInboxPage() {
-  const [complaints, setComplaints] = useState<Complaint[]>(DEFAULT_COMPLAINTS);
+  const { tenant } = useAuth();
+  const [showForm, setShowForm] = useState(false);
+  const [complaints, setComplaints] = useState<OfflineComplaint[]>([]);
+  const [isOnline, setIsOnline] = useState(true);
+  const [filterStatus, setFilterStatus] = useState("الكل");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("ayla_complaints", JSON.stringify(complaints));
-    }
-  }, [complaints]);
+    setIsOnline(navigator.onLine);
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    seedDemoData();
+    setComplaints(getOfflineComplaints());
+    return () => { window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
+  }, []);
 
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<Status | "الكل">("الكل");
-  const [filterPriority, setFilterPriority] = useState<Priority | "الكل">("الكل");
-  const [filterType, setFilterType] = useState<IssueType | "الكل">("الكل");
-  const [showAdd, setShowAdd] = useState(false);
-  const [showDetail, setShowDetail] = useState<Complaint | null>(null);
-  const excelRef = useRef<HTMLInputElement>(null);
+  const refresh = () => setComplaints(getOfflineComplaints());
 
   const [form, setForm] = useState({
-    school: "", location: "", issueType: "أخرى" as IssueType,
-    description: "", priority: "عادي" as Priority, reporter: "", phone: "", supervisorPhone: ""
+    title: "", school: "", schoolRef: "", type: "صيانة", priority: "متوسط", description: "", source: "manual" as "whatsapp" | "education_app" | "manual",
   });
 
-  const [detailForm, setDetailForm] = useState({
-    status: "جديد" as Status, assignedTo: "", team: "", notes: ""
-  });
-
-  const notifyWhatsApp = async (phone: string, message: string) => {
-    try {
-      const res = await fetch("/api/whatsapp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: phone, body: message }),
-      });
-      const data = await res.json();
-      if (!data.success) console.error("WhatsApp failed:", data.error);
-    } catch (e) {
-      console.error("Notify error:", e);
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    addOfflineComplaint({ title: form.title, school: form.school, schoolRef: form.schoolRef, type: form.type, priority: form.priority, status: "جديد", description: form.description, source: form.source });
+    distributeComplaints();
+    setForm({ title: "", school: "", schoolRef: "", type: "صيانة", priority: "متوسط", description: "", source: "manual" });
+    setShowForm(false);
+    refresh();
   };
 
-  const handleExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const buf = await file.arrayBuffer();
-      const XLSX = await import("xlsx");
-      const wb = XLSX.read(buf, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-      const rows = data.slice(1);
-      const imported: Complaint[] = rows.map((row, idx) => ({
-        id: `BLG-${Date.now()}-${idx}`,
-        school: String(row[0] || ""),
-        location: String(row[1] || ""),
-        issueType: (ISSUE_TYPES.includes(row[2]) ? row[2] : "أخرى") as IssueType,
-        description: String(row[3] || ""),
-        priority: (PRIORITIES.includes(row[4]) ? row[4] : "عادي") as Priority,
-        status: "جديد" as Status,
-        assignedTo: String(row[5] || ""),
-        team: String(row[6] || ""),
-        date: new Date().toISOString().split("T")[0],
-        reporter: String(row[7] || ""),
-        phone: String(row[8] || ""),
-        notes: "",
-      })).filter((c) => c.school.trim());
-      setComplaints((prev) => [...prev, ...imported]);
-    } catch {
-      alert("⚠️ تأكد من تثبيت: npm install xlsx");
-    }
-  };
+  const handleStatusChange = (id: string, newStatus: string) => { updateComplaint(id, { status: newStatus }); refresh(); };
 
-  const addManual = () => {
-    if (!form.school.trim() || !form.description.trim()) return alert("اسم المدرسة والوصف مطلوبان");
-    const newId = `BLG-${Date.now()}`;
+  const filtered = complaints.filter((c) => filterStatus === "الكل" || c.status === filterStatus);
 
-    setComplaints((prev) => [...prev, {
-      id: newId,
-      school: form.school,
-      location: form.location,
-      issueType: form.issueType,
-      description: form.description,
-      priority: form.priority,
-      status: "جديد" as Status,
-      assignedTo: "",
-      team: "",
-      date: new Date().toISOString().split("T")[0],
-      reporter: form.reporter,
-      phone: form.phone,
-      notes: "",
-    }]);
-
-    if (form.supervisorPhone.trim()) {
-      const msg = `🔔 بلاغ جديد في آيلا\n📍 المدرسة: ${form.school}\n⚠️ النوع: ${form.issueType}\n📝 ${form.description}\n🔢 الرقم: ${newId}`;
-      notifyWhatsApp(form.supervisorPhone, msg);
-    }
-
-    setForm({ school: "", location: "", issueType: "أخرى", description: "", priority: "عادي", reporter: "", phone: "", supervisorPhone: "" });
-    setShowAdd(false);
-  };
-
-  const updateComplaint = (id: string) => {
-    const old = complaints.find(c => c.id === id);
-    setComplaints((prev) => prev.map((c) => c.id === id ? {
-      ...c,
-      status: detailForm.status,
-      assignedTo: detailForm.assignedTo,
-      team: detailForm.team,
-      notes: detailForm.notes,
-    } : c));
-
-    if (old?.phone && detailForm.status !== old.status) {
-      const msg = `📋 تحديث بلاغ ${id}\n🏫 ${old.school}\n📊 الحالة الجديدة: ${detailForm.status}\n📝 ${detailForm.notes || "لا يوجد ملاحظات"}`;
-      notifyWhatsApp(old.phone, msg);
-    }
-
-    setShowDetail(null);
-  };
-
-  const exportExcel = async () => {
-    if (complaints.length === 0) return;
-    const headers = [["الرقم", "المدرسة", "الموقع", "النوع", "الوصف", "الأولوية", "الحالة", "المسؤول", "الفريق", "التاريخ", "مقدم البلاغ", "الجوال"]];
-    const rows = complaints.map((c) => [c.id, c.school, c.location, c.issueType, c.description, c.priority, c.status, c.assignedTo, c.team, c.date, c.reporter, c.phone]);
-    await exportWithHeader([...headers, ...rows], "البلاغات_آيلا.xlsx", "البلاغات");
-  };
-
-  const filtered = useMemo(() => {
-    return complaints.filter((c) => {
-      const q = search.trim();
-      const matchSearch = !q || c.school.includes(q) || c.description.includes(q) || c.id.includes(q) || c.assignedTo.includes(q);
-      const matchStatus = filterStatus === "الكل" || c.status === filterStatus;
-      const matchPriority = filterPriority === "الكل" || c.priority === filterPriority;
-      const matchType = filterType === "الكل" || c.issueType === filterType;
-      return matchSearch && matchStatus && matchPriority && matchType;
-    });
-  }, [complaints, search, filterStatus, filterPriority, filterType]);
-
-  const stats = {
-    total: complaints.length,
-    new: complaints.filter((c) => c.status === "جديد").length,
-    inProgress: complaints.filter((c) => c.status === "قيد العمل").length,
-    done: complaints.filter((c) => c.status === "تم الإنجاز").length,
-    closed: complaints.filter((c) => c.status === "مغلق").length,
-  };
-
-  const priorityColor = (p: Priority) => {
-    if (p === "عاجل") return "bg-red-50 text-red-700 border-red-200";
-    if (p === "عادي") return "bg-yellow-50 text-yellow-700 border-yellow-200";
-    return "bg-green-50 text-green-700 border-green-200";
-  };
-
-  const statusColor = (s: Status) => {
-    switch (s) {
-      case "جديد": return "bg-blue-50 text-blue-700 border-blue-200";
-      case "قيد المراجعة": return "bg-purple-50 text-purple-700 border-purple-200";
-      case "تم التوزيع": return "bg-cyan-50 text-cyan-700 border-cyan-200";
-      case "قيد العمل": return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "في الانتظار قطع غيار": return "bg-orange-50 text-orange-700 border-orange-200";
-      case "تم الإنجاز": return "bg-green-50 text-green-700 border-green-200";
-      case "مغلق": return "bg-gray-50 text-gray-600 border-gray-200";
-    }
-  };
-
-  const openDetail = (c: Complaint) => {
-    setDetailForm({ status: c.status, assignedTo: c.assignedTo, team: c.team, notes: c.notes });
-    setShowDetail(c);
+  const getPriorityColor = (p: string) => { if (p === "عالي") return "bg-red-100 text-red-600"; if (p === "متوسط") return "bg-amber-100 text-amber-600"; return "bg-blue-100 text-blue-600"; };
+  const getStatusColor = (s: string) => { if (s === "تم") return "bg-emerald-100 text-emerald-700"; if (s === "قيد العمل") return "bg-blue-100 text-blue-700"; return "bg-amber-100 text-amber-700"; };
+  const getSourceBadge = (source: string) => {
+    if (source === "whatsapp") return <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold">واتساب</span>;
+    if (source === "education_app") return <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold">تعليم</span>;
+    return <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-bold">يدوي</span>;
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <h1 className="text-2xl lg:text-3xl font-bold text-[#2C1810] flex items-center gap-3" style={{ fontFamily: "Tajawal, sans-serif" }}>
-            <Inbox className="w-8 h-8 text-[#C9A227]" /> صندوق البلاغات
-          </h1>
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={() => excelRef.current?.click()} className="px-4 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm flex items-center gap-2 hover:bg-[#b89420] transition">
-              <Upload className="w-4 h-4" /> استيراد Excel
-            </button>
-            <input ref={excelRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcel} />
-            <button onClick={() => setShowAdd(true)} className="px-4 py-2 rounded-xl bg-[#1A0F09] text-[#C9A227] font-bold text-sm flex items-center gap-2 hover:bg-[#2C1810] transition">
-              <Plus className="w-4 h-4" /> بلاغ جديد
-            </button>
-            {complaints.length > 0 && (
-              <>
-                <button onClick={exportExcel} className="px-4 py-2 rounded-xl bg-green-600 text-white font-bold text-sm flex items-center gap-2 hover:bg-green-700 transition">
-                  <Download className="w-4 h-4" /> تصدير
-                </button>
-                <button onClick={() => confirm("تأكيد تفريغ جميع البلاغات؟") && setComplaints([])} className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold text-sm flex items-center gap-2 hover:bg-red-100 transition">
-                  <Trash2 className="w-4 h-4" /> تفريغ
-                </button>
-              </>
-            )}
-          </div>
+    <div className="space-y-6" dir="rtl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-[#1A0F09]">سجل البلاغات</h1>
+          <p className="text-gray-500 text-sm mt-1">إدارة بلاغات الصيانة والنظافة والتكييف — {tenant?.nameAr}</p>
         </div>
-
-        {/* إحصائيات */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-          <div className="p-4 rounded-2xl bg-white border border-[#C9A227]/10 text-center">
-            <div className="text-3xl font-bold text-[#C9A227]">{stats.total}</div>
-            <div className="text-xs text-gray-500 mt-1">إجمالي البلاغات</div>
-          </div>
-          <div className="p-4 rounded-2xl bg-white border border-blue-200 text-center">
-            <div className="text-3xl font-bold text-blue-600">{stats.new}</div>
-            <div className="text-xs text-gray-500 mt-1">جديدة</div>
-          </div>
-          <div className="p-4 rounded-2xl bg-white border border-yellow-200 text-center">
-            <div className="text-3xl font-bold text-yellow-600">{stats.inProgress}</div>
-            <div className="text-xs text-gray-500 mt-1">قيد العمل</div>
-          </div>
-          <div className="p-4 rounded-2xl bg-white border border-green-200 text-center">
-            <div className="text-3xl font-bold text-green-600">{stats.done}</div>
-            <div className="text-xs text-gray-500 mt-1">تم الإنجاز</div>
-          </div>
-          <div className="p-4 rounded-2xl bg-white border border-gray-200 text-center">
-            <div className="text-3xl font-bold text-gray-600">{stats.closed}</div>
-            <div className="text-xs text-gray-500 mt-1">مغلقة</div>
-          </div>
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${isOnline ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>{isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}{isOnline ? "متصل" : "غير متصل — يعمل Offline"}</div>
+          <button onClick={refresh} className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition"><RotateCcw className="w-4 h-4 text-gray-500" /></button>
+          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-5 py-3 bg-[#C9A227] text-[#1A0F09] rounded-xl font-bold text-sm hover:bg-[#b89420] transition shadow-lg shadow-[#C9A227]/20"><Plus className="w-4 h-4" /> {showForm ? "إلغاء" : "بلاغ جديد"}</button>
         </div>
-
-        {/* فلاتر */}
-        <div className="bg-white rounded-2xl border border-[#C9A227]/10 p-4 mb-6 space-y-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Filter className="w-4 h-4 text-[#C9A227]" />
-            <span className="font-bold text-sm text-[#2C1810]">فلترة البلاغات</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="relative">
-              <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث باسم المدرسة أو الوصف..." className="w-full pr-9 pl-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-            </div>
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as Status | "الكل")} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
-              <option value="الكل">كل الحالات</option>
-              {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value as Priority | "الكل")} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
-              <option value="الكل">كل الأولويات</option>
-              {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-            <select value={filterType} onChange={(e) => setFilterType(e.target.value as IssueType | "الكل")} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
-              <option value="الكل">كل الأنواع</option>
-              {ISSUE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {/* الجدول */}
-        {complaints.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[#C9A227]/10 p-12 text-center">
-            <Inbox className="w-16 h-16 text-[#C9A227]/20 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">لا توجد بلاغات مسجلة</p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={() => excelRef.current?.click()} className="px-6 py-3 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold hover:bg-[#b89420] transition">استيراد من Excel</button>
-              <button onClick={() => setShowAdd(true)} className="px-6 py-3 rounded-xl bg-[#1A0F09] text-[#C9A227] font-bold hover:bg-[#2C1810] transition">إضافة بلاغ</button>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-[#C9A227]/10 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-[#FAF7F2]">
-                  <tr>
-                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">الرقم</th>
-                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">المدرسة</th>
-                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">النوع</th>
-                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">الأولوية</th>
-                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">الحالة</th>
-                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">المسؤول</th>
-                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">التاريخ</th>
-                    <th className="px-4 py-3 text-right font-bold text-[#5C3A2A]">تفاصيل</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((c) => (
-                    <tr key={c.id} className="border-t border-[#C9A227]/5 hover:bg-[#FAF7F2]/50 transition">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{c.id}</td>
-                      <td className="px-4 py-3">
-                        <div className="font-bold text-[#2C1810]">{c.school}</div>
-                        <div className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3" /> {c.location}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3"><span className="px-2 py-1 rounded-lg bg-[#C9A227]/10 text-[#5C3A2A] text-xs font-bold">{c.issueType}</span></td>
-                      <td className="px-4 py-3"><span className={`px-2 py-1 rounded-lg text-xs font-bold border ${priorityColor(c.priority)}`}>{c.priority}</span></td>
-                      <td className="px-4 py-3"><span className={`px-2 py-1 rounded-lg text-xs font-bold border ${statusColor(c.status)}`}>{c.status}</span></td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">{c.assignedTo || "—"}</td>
-                      <td className="px-4 py-3 text-gray-500 text-xs flex items-center gap-1"><Calendar className="w-3 h-3" />{c.date}</td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => openDetail(c)} className="p-1.5 rounded-lg bg-[#C9A227]/10 text-[#C9A227] hover:bg-[#C9A227]/20 transition">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-3 border-t border-[#C9A227]/10 text-xs text-gray-500 text-center">
-              عرض {filtered.length} من {complaints.length} بلاغ
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Modal إضافة بلاغ */}
-      {showAdd && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAdd(false)}>
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#2C1810]">تسجيل بلاغ جديد</h2>
-              <button onClick={() => setShowAdd(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-500" /></button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input placeholder="اسم المدرسة *" value={form.school} onChange={(e) => setForm({ ...form, school: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227] md:col-span-2" />
-              <input placeholder="الموقع / الحي" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-              <select value={form.issueType} onChange={(e) => setForm({ ...form, issueType: e.target.value as IssueType })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
-                {ISSUE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as Priority })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
-                {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <textarea placeholder="وصف البلاغ بالتفصيل *" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227] h-24 resize-none md:col-span-2" />
-              <input placeholder="اسم مقدم البلاغ" value={form.reporter} onChange={(e) => setForm({ ...form, reporter: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-              <input placeholder="رقم الجوال" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-              <input placeholder="رقم المشرف للإشعار (واتساب)" value={form.supervisorPhone} onChange={(e) => setForm({ ...form, supervisorPhone: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227] md:col-span-2" />
-            </div>
-            <div className="mt-6 flex gap-3 justify-end">
-              <button onClick={() => setShowAdd(false)} className="px-5 py-2 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition">إلغاء</button>
-              <button onClick={addManual} className="px-5 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition">حفظ البلاغ</button>
-            </div>
-          </div>
+      {showForm && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-[#1A0F09] mb-4">إضافة بلاغ جديد</h2>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className="block text-sm font-bold text-[#1A0F09] mb-1">عنوان البلاغ</label><input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#C9A227] focus:ring-2 focus:ring-[#C9A227]/20 outline-none transition" placeholder="مثال: تسرب مياه في مبنى 12" /></div>
+            <div><label className="block text-sm font-bold text-[#1A0F09] mb-1">المدرسة / المبنى</label><input required value={form.school} onChange={(e) => setForm({ ...form, school: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#C9A227] outline-none transition" placeholder="مثال: مدرسة الأمل" /></div>
+            <div><label className="block text-sm font-bold text-[#1A0F09] mb-1">الرقم المرجعي للمدرسة</label><input required value={form.schoolRef} onChange={(e) => setForm({ ...form, schoolRef: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#C9A227] outline-none transition" placeholder="مثال: REF-1001" /></div>
+            <div><label className="block text-sm font-bold text-[#1A0F09] mb-1">مصدر البلاغ</label><select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value as typeof form.source })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#C9A227] outline-none transition"><option value="manual">يدوي</option><option value="whatsapp">واتساب</option><option value="education_app">منصة التعليم</option></select></div>
+            <div><label className="block text-sm font-bold text-[#1A0F09] mb-1">نوع البلاغ</label><select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#C9A227] outline-none transition"><option>صيانة</option><option>نظافة</option><option>تكييف</option><option>كهرباء</option><option>سباكة</option></select></div>
+            <div><label className="block text-sm font-bold text-[#1A0F09] mb-1">الأولوية</label><select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#C9A227] outline-none transition"><option>عالي</option><option>متوسط</option><option>منخفض</option></select></div>
+            <div className="md:col-span-2"><label className="block text-sm font-bold text-[#1A0F09] mb-1">وصف تفصيلي</label><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#C9A227] outline-none transition h-24 resize-none" placeholder="وصف المشكلة بالتفصيل..." /></div>
+            <div className="md:col-span-2"><button type="submit" className="px-6 py-3 bg-[#1A0F09] text-white rounded-xl font-bold text-sm hover:bg-[#3d2317] transition">حفظ البلاغ + توزيع ذكي</button></div>
+          </form>
         </div>
       )}
 
-      {/* Modal تفاصيل البلاغ */}
-      {showDetail && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDetail(null)}>
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-[#2C1810]">بلاغ {showDetail.id}</h2>
-                <p className="text-xs text-gray-400 mt-1">{showDetail.school}</p>
-              </div>
-              <button onClick={() => setShowDetail(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-500" /></button>
-            </div>
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {["الكل", "جديد", "قيد العمل", "تم"].map((s) => (
+          <button key={s} onClick={() => setFilterStatus(s)} className={`px-4 py-2 rounded-xl text-xs font-bold transition border ${filterStatus === s ? "bg-[#1A0F09] text-white border-[#1A0F09]" : "bg-white text-gray-500 border-gray-200 hover:border-[#C9A227]"}`}>{s}</button>
+        ))}
+      </div>
 
-            <div className="space-y-4">
-              <div className="bg-[#FAF7F2] rounded-xl p-4">
-                <h3 className="font-bold text-sm text-[#2C1810] mb-1">وصف البلاغ:</h3>
-                <p className="text-sm text-gray-700">{showDetail.description}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-gray-600"><MapPin className="w-4 h-4 text-[#C9A227]" /> {showDetail.location}</div>
-                <div className="flex items-center gap-2 text-gray-600"><Phone className="w-4 h-4 text-[#C9A227]" /> {showDetail.phone || "—"}</div>
-                <div className="flex items-center gap-2 text-gray-600"><UserCheck className="w-4 h-4 text-[#C9A227]" /> {showDetail.reporter || "—"}</div>
-                <div className="flex items-center gap-2 text-gray-600"><Calendar className="w-4 h-4 text-[#C9A227]" /> {showDetail.date}</div>
-              </div>
-
-              <div className="border-t border-[#C9A227]/10 pt-4 space-y-3">
-                <h3 className="font-bold text-sm text-[#2C1810] flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-[#C9A227]" /> تحديث البلاغ
-                </h3>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">الحالة</label>
-                  <select value={detailForm.status} onChange={(e) => setDetailForm({ ...detailForm, status: e.target.value as Status })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm bg-white focus:outline-none focus:border-[#C9A227]">
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">المسؤول / المشرف</label>
-                    <input value={detailForm.assignedTo} onChange={(e) => setDetailForm({ ...detailForm, assignedTo: e.target.value })} placeholder="اسم المشرف" className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">الفريق</label>
-                    <input value={detailForm.team} onChange={(e) => setDetailForm({ ...detailForm, team: e.target.value })} placeholder="اسم الفريق" className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">ملاحظات التنفيذ</label>
-                  <textarea value={detailForm.notes} onChange={(e) => setDetailForm({ ...detailForm, notes: e.target.value })} placeholder="أضف ملاحظات..." className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227] h-20 resize-none" />
-                </div>
-              </div>
-
-              <div className="flex gap-3 justify-end pt-2">
-                <button onClick={() => setShowDetail(null)} className="px-5 py-2 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition">إلغاء</button>
-                <button onClick={() => updateComplaint(showDetail.id)} className="px-5 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm hover:bg-[#b89420] transition">حفظ التحديث</button>
-              </div>
-            </div>
-          </div>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="bg-[#FAF7F2] text-gray-500">
+              <th className="text-right py-3 px-4 font-bold">#</th>
+              <th className="text-right py-3 px-4 font-bold">البلاغ</th>
+              <th className="text-right py-3 px-4 font-bold">المدرسة</th>
+              <th className="text-right py-3 px-4 font-bold">المرجعي</th>
+              <th className="text-right py-3 px-4 font-bold">المصدر</th>
+              <th className="text-right py-3 px-4 font-bold">النوع</th>
+              <th className="text-right py-3 px-4 font-bold">الأولوية</th>
+              <th className="text-right py-3 px-4 font-bold">الفريق</th>
+              <th className="text-right py-3 px-4 font-bold">الحالة</th>
+              <th className="text-right py-3 px-4 font-bold">الإجراء</th>
+            </tr></thead>
+            <tbody>
+              {filtered.map((c) => (
+                <tr key={c.id} className="border-b border-gray-50 hover:bg-[#FAF7F2] transition">
+                  <td className="py-3 px-4 text-gray-400 font-mono text-xs">{c.id.slice(-6)}</td>
+                  <td className="py-3 px-4 font-bold text-[#1A0F09]">{c.title}</td>
+                  <td className="py-3 px-4 text-gray-500">{c.school}</td>
+                  <td className="py-3 px-4"><span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-mono font-bold">{c.schoolRef || "-"}</span></td>
+                  <td className="py-3 px-4">{getSourceBadge(c.source)}</td>
+                  <td className="py-3 px-4"><span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs font-bold">{c.type}</span></td>
+                  <td className="py-3 px-4"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getPriorityColor(c.priority)}`}>{c.priority}</span></td>
+                  <td className="py-3 px-4 text-xs text-gray-500">{c.team || "-"}</td>
+                  <td className="py-3 px-4"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getStatusColor(c.status)}`}>{c.status}</span></td>
+                  <td className="py-3 px-4">
+                    {c.status === "جديد" && <button onClick={() => handleStatusChange(c.id, "قيد العمل")} className="text-xs font-bold text-[#C9A227] hover:underline">بدء العمل</button>}
+                    {c.status === "قيد العمل" && <button onClick={() => handleStatusChange(c.id, "تم")} className="text-xs font-bold text-emerald-600 hover:underline">إغلاق</button>}
+                    {c.status === "تم" && <CheckCircle className="w-4 h-4 text-emerald-500" />}
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && <tr><td colSpan={10} className="py-12 text-center text-gray-400 text-sm">لا توجد بلاغات</td></tr>}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 }

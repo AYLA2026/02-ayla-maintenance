@@ -3,14 +3,21 @@
 import { useState } from "react";
 import { Plus, X, Building2, Trash2, Palette } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { Tenant } from "@/lib/permissions";
+
+interface Tenant {
+  id: string;
+  name: string;
+  nameAr: string;
+  color: string;
+  logo?: string;
+}
 
 export default function TenantsPage() {
   const { tenants, user } = useAuth();
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", color: "#C9A227" });
+  const [form, setForm] = useState({ name: "", nameAr: "", color: "#C9A227" });
 
-  if (user?.role !== "super_admin") {
+  if (user?.role !== "system_admin") {
     return (
       <div className="min-h-screen bg-[#FAF7F2] p-12 text-center">
         <p className="text-red-600 font-bold">⛔ ليس لديك صلاحية الوصول لهذه الصفحة</p>
@@ -19,10 +26,11 @@ export default function TenantsPage() {
   }
 
   const addTenant = () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim() || !form.nameAr.trim()) return;
     const newTenant: Tenant = {
       id: `tnt-${Date.now()}`,
       name: form.name,
+      nameAr: form.nameAr,
       color: form.color,
     };
     const updated = [...tenants, newTenant];
@@ -57,10 +65,11 @@ export default function TenantsPage() {
             <div key={t.id} className="bg-white rounded-2xl border border-[#C9A227]/10 p-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: t.color || "#C9A227" }}>
-                  {t.name.charAt(0)}
+                  {t.nameAr?.charAt(0) || t.name.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#2C1810]">{t.name}</h3>
+                  <h3 className="font-bold text-[#2C1810]">{t.nameAr}</h3>
+                  <p className="text-xs text-gray-400">{t.name}</p>
                   <p className="text-[10px] text-gray-400 font-mono">{t.id}</p>
                 </div>
               </div>
@@ -79,7 +88,8 @@ export default function TenantsPage() {
                 <button onClick={() => setShowAdd(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-500" /></button>
               </div>
               <div className="space-y-3">
-                <input placeholder="اسم الشركة *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+                <input placeholder="اسم الشركة بالعربي *" value={form.nameAr} onChange={(e) => setForm({ ...form, nameAr: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
+                <input placeholder="اسم الشركة بالإنجليزي *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-[#C9A227]/20 text-sm focus:outline-none focus:border-[#C9A227]" />
                 <div className="flex items-center gap-2">
                   <Palette className="w-4 h-4 text-[#C9A227]" />
                   <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-10 h-10 rounded-lg border-0 cursor-pointer" />

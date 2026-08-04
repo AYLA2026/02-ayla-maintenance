@@ -2,7 +2,13 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type UserRole = "system_admin" | "company_manager" | "site_engineer" | "supervisor" | "technician" | "visitor";
+export type UserRole = 
+  | "system_admin" 
+  | "company_manager" 
+  | "site_engineer" 
+  | "supervisor" 
+  | "technician" 
+  | "visitor";
 
 interface Tenant {
   id: string;
@@ -97,7 +103,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return roles.includes(user.role);
   };
 
-  if (!mounted) return <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#C9A227] border-t-transparent rounded-full animate-spin" /></div>;
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#C9A227] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, tenant, tenants: TENANTS, loading, login, logout, isAllowed }}>

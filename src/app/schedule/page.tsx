@@ -28,11 +28,11 @@ const SCHOOLS_POOL = [
 ];
 
 const TEAMS = [
-  { id: "t1", name: "فريق الصيانة أ", members: 4, status: "متاح" as const },
-  { id: "t2", name: "فريق الصيانة ب", members: 3, status: "متاح" as const },
-  { id: "t3", name: "فريق التكييف ب", members: 2, status: "مشغول" as const },
-  { id: "t4", name: "فريق النظافة ج", members: 6, status: "متاح" as const },
-  { id: "t5", name: "فريق الطوارئ", members: 3, status: "متاح" as const },
+  { id: "t1", name: "فريق الصيانة أ", members: 4, status: "متاح" as "متاح" | "مشغول" | "خارج الخدمة" },
+  { id: "t2", name: "فريق الصيانة ب", members: 3, status: "متاح" as "متاح" | "مشغول" | "خارج الخدمة" },
+  { id: "t3", name: "فريق التكييف ب", members: 2, status: "مشغول" as "متاح" | "مشغول" | "خارج الخدمة" },
+  { id: "t4", name: "فريق النظافة ج", members: 6, status: "متاح" as "متاح" | "مشغول" | "خارج الخدمة" },
+  { id: "t5", name: "فريق الطوارئ", members: 3, status: "متاح" as "متاح" | "مشغول" | "خارج الخدمة" },
 ];
 
 const TASK_TYPES = ["صيانة عامة", "كهرباء", "سباكة", "تكييف", "نظافة", "فحص دوري"];

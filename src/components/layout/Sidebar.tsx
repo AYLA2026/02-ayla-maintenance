@@ -39,16 +39,16 @@ export default function Sidebar() {
   const items = NAV_ITEMS.filter((i) => i.roles.includes(user.role));
 
   return (
-    <aside className="w-64 h-screen bg-[#1A0F09] text-white flex flex-col fixed right-0 top-0 z-40">
+    <aside className="w-64 bg-[#1A0F09] text-[#C9A227] flex flex-col fixed right-0 top-0 z-40" style={{ height: '100dvh' }}>
       {/* الهيدر */}
-      <div className="p-6 border-b border-white/10 shrink-0">
-        <h1 className="text-xl font-black text-[#C9A227]">آيلا للصيانة</h1>
-        <p className="text-[10px] text-white/50 mt-1">{user.name}</p>
-        <p className="text-[10px] text-[#C9A227]/70">{user.role.replace(/_/g, " ")}</p>
+      <div className="p-6 border-b border-[#C9A227]/20" style={{ flexShrink: 0 }}>
+        <h1 className="text-2xl font-black text-[#C9A227] tracking-wide">آيلا للصيانة</h1>
+        <p className="text-xs text-[#C9A227]/70 mt-2 font-bold">{user.name}</p>
+        <p className="text-[10px] text-white/40 mt-0.5 uppercase tracking-wider">{user.role.replace(/_/g, " ")}</p>
       </div>
 
       {/* القائمة */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto sidebar-scroll">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden">
         {items.map((item) => {
           const Icon = ICON_MAP[item.iconName] || LayoutDashboard;
           const sub = SUBMENU[item.href];
@@ -60,49 +60,47 @@ export default function Sidebar() {
               {sub ? (
                 <button
                   onClick={() => toggle(item.href)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition ${
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
                     isActive
-                      ? "bg-[#C9A227] text-[#1A0F09]"
-                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                      ? "bg-[#C9A227] text-[#1A0F09] shadow-lg shadow-[#C9A227]/20"
+                      : "text-[#C9A227]/80 hover:bg-[#C9A227]/10 hover:text-[#C9A227]"
                   }`}
                 >
                   <span className="flex items-center gap-3">
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-5 h-5" />
                     {item.label}
                   </span>
-                  {isOpen ? (
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  ) : (
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  )}
+                  <span className="transition-transform duration-200">
+                    {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                  </span>
                 </button>
               ) : (
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
                     isActive
-                      ? "bg-[#C9A227] text-[#1A0F09]"
-                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                      ? "bg-[#C9A227] text-[#1A0F09] shadow-lg shadow-[#C9A227]/20"
+                      : "text-[#C9A227]/80 hover:bg-[#C9A227]/10 hover:text-[#C9A227]"
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-5 h-5" />
                   {item.label}
                 </Link>
               )}
 
-              {/* فرعي */}
+              {/* القائمة الفرعية */}
               {sub && isOpen && (
-                <div className="mr-4 mt-1 space-y-1 border-r-2 border-[#C9A227]/20 pr-3">
+                <div className="mr-3 mt-2 space-y-1 border-r-2 border-[#C9A227]/30 pr-3 animate-in slide-in-from-top-1 duration-200">
                   {sub.map((s) => {
                     const active = pathname === s.href;
                     return (
                       <Link
                         key={s.href}
                         href={s.href}
-                        className={`block px-4 py-2 rounded-lg text-xs font-bold transition ${
+                        className={`block px-4 py-2.5 rounded-lg text-xs font-bold transition ${
                           active
-                            ? "bg-[#C9A227]/20 text-[#C9A227]"
-                            : "text-white/50 hover:text-white hover:bg-white/5"
+                            ? "bg-[#C9A227]/20 text-[#C9A227] border border-[#C9A227]/30"
+                            : "text-white/50 hover:text-[#C9A227] hover:bg-white/5"
                         }`}
                       >
                         {s.label}
@@ -117,12 +115,12 @@ export default function Sidebar() {
       </nav>
 
       {/* خروج */}
-      <div className="p-4 border-t border-white/10 shrink-0">
+      <div className="p-4 border-t border-[#C9A227]/20" style={{ flexShrink: 0 }}>
         <button
           onClick={logout}
           className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition w-full"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-5 h-5" />
           تسجيل الخروج
         </button>
       </div>

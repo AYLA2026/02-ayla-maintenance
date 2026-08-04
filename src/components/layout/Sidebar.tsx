@@ -8,7 +8,7 @@ import { NAV_ITEMS } from "@/lib/permissions";
 import {
   LayoutDashboard, Inbox, Zap, Calendar, Package,
   Building2, Users, Truck, Wrench, BarChart3, LogOut,
-  ChevronDown, ChevronLeft,
+  ChevronDown, ChevronLeft, PanelLeft,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -27,70 +27,86 @@ const SUBMENU: Record<string, { label: string; href: string }[]> = {
   ],
 };
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed: (v: boolean) => void }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
   if (!user) return null;
 
-  const toggle = (href: string) => setOpen((p) => ({ ...p, [href]: !p[href] }));
+  const toggleMenu = (href: string) => {
+    setOpenMenus((p) => ({ ...p, [href]: !p[href] }));
+  };
 
   const items = NAV_ITEMS.filter((i) => i.roles.includes(user.role));
 
   return (
-    <aside className="w-64 bg-[#1A0F09] text-[#C9A227] flex flex-col fixed right-0 top-0 z-40" style={{ height: '100dvh' }}>
+    <aside className={`bg-[#1A0F09] text-[#C9A227] flex flex-col fixed right-0 top-0 z-40 h-screen transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
       {/* الهيدر */}
-      <div className="p-6 border-b border-[#C9A227]/20" style={{ flexShrink: 0 }}>
-        <h1 className="text-2xl font-black text-[#C9A227] tracking-wide">آيلا للصيانة</h1>
-        <p className="text-xs text-[#C9A227]/70 mt-2 font-bold">{user.name}</p>
-        <p className="text-[10px] text-white/40 mt-0.5 uppercase tracking-wider">{user.role.replace(/_/g, " ")}</p>
+      <div className="p-4 border-b border-[#C9A227]/20 flex items-center justify-between" style={{ flexShrink: 0 }}>
+        {!collapsed && (
+          <div>
+            <h1 className="text-xl font-black text-[#C9A227] tracking-wide">آيلا للصيانة</h1>
+            <p className="text-xs text-[#C9A227]/70 mt-1 font-bold">{user.name}</p>
+          </div>
+        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="p-2 rounded-lg hover:bg-[#C9A227]/10 transition"
+          title={collapsed ? "توسيع" : "طي"}
+        >
+          {collapsed ? <ChevronLeft className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
+        </button>
       </div>
 
       {/* القائمة */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 p-3 space-y-2 overflow-y-auto overflow-x-hidden">
         {items.map((item) => {
           const Icon = ICON_MAP[item.iconName] || LayoutDashboard;
           const sub = SUBMENU[item.href];
-          const isOpen = open[item.href];
+          const isOpen = openMenus[item.href];
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
           return (
             <div key={item.href}>
               {sub ? (
                 <button
-                  onClick={() => toggle(item.href)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+                  onClick={() => toggleMenu(item.href)}
+                  className={`w-full flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-3 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
                     isActive
                       ? "bg-[#C9A227] text-[#1A0F09] shadow-lg shadow-[#C9A227]/20"
                       : "text-[#C9A227]/80 hover:bg-[#C9A227]/10 hover:text-[#C9A227]"
                   }`}
+                  title={collapsed ? item.label : undefined}
                 >
                   <span className="flex items-center gap-3">
                     <Icon className="w-5 h-5" />
-                    {item.label}
+                    {!collapsed && item.label}
                   </span>
-                  <span className="transition-transform duration-200">
-                    {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                  </span>
+                  {!collapsed && (
+                    <span className="transition-transform duration-200">
+                      {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                    </span>
+                  )}
                 </button>
               ) : (
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+                  className={`flex items-center ${collapsed ? 'justify-center' : 'justify-start'} gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
                     isActive
                       ? "bg-[#C9A227] text-[#1A0F09] shadow-lg shadow-[#C9A227]/20"
                       : "text-[#C9A227]/80 hover:bg-[#C9A227]/10 hover:text-[#C9A227]"
                   }`}
+                  title={collapsed ? item.label : undefined}
                 >
                   <Icon className="w-5 h-5" />
-                  {item.label}
+                  {!collapsed && item.label}
                 </Link>
               )}
 
-              {/* القائمة الفرعية */}
-              {sub && isOpen && (
-                <div className="mr-3 mt-2 space-y-1 border-r-2 border-[#C9A227]/30 pr-3 animate-in slide-in-from-top-1 duration-200">
+              {/* القائمة الفرعية (ستارة) */}
+              {sub && isOpen && !collapsed && (
+                <div className="mr-3 mt-2 space-y-1 border-r-2 border-[#C9A227]/30 pr-3">
                   {sub.map((s) => {
                     const active = pathname === s.href;
                     return (
@@ -115,13 +131,14 @@ export default function Sidebar() {
       </nav>
 
       {/* خروج */}
-      <div className="p-4 border-t border-[#C9A227]/20" style={{ flexShrink: 0 }}>
+      <div className="p-3 border-t border-[#C9A227]/20" style={{ flexShrink: 0 }}>
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition w-full"
+          className={`flex items-center ${collapsed ? 'justify-center' : 'justify-start'} gap-3 px-3 py-3 rounded-xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition w-full`}
+          title={collapsed ? "تسجيل الخروج" : undefined}
         >
           <LogOut className="w-5 h-5" />
-          تسجيل الخروج
+          {!collapsed && "تسجيل الخروج"}
         </button>
       </div>
     </aside>

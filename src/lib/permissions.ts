@@ -9,10 +9,11 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { label: "لوحة التحكم", href: "/", iconName: "LayoutDashboard", roles: ["system_admin", "company_manager", "supervisor", "site_engineer", "technician", "visitor"] },
-  { label: "البلاغات", href: "/complaints", iconName: "Inbox", roles: ["system_admin", "company_manager", "supervisor", "site_engineer", "technician", "visitor"] },
+  { label: "البلاغات", href: "/complaints/inbox", iconName: "Inbox", roles: ["system_admin", "company_manager", "supervisor", "site_engineer", "technician", "visitor"] },
+  { label: "البلاغات الذكية", href: "/complaints/distributor", iconName: "Zap", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },
   { label: "الجدولة الدورية", href: "/schedule", iconName: "Calendar", roles: ["system_admin", "company_manager", "supervisor"] },
   { label: "المخازن", href: "/inventory", iconName: "Package", roles: ["system_admin", "company_manager", "supervisor"] },
-  { label: "المباني", href: "/buildings", iconName: "Building2", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },
+  { label: "المدارس", href: "/schools", iconName: "Building2", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },
   { label: "الفرق", href: "/teams", iconName: "Users", roles: ["system_admin", "company_manager", "supervisor"] },
   { label: "السيارات", href: "/vehicles", iconName: "Truck", roles: ["system_admin", "company_manager", "supervisor"] },
   { label: "الفنيين", href: "/technicians", iconName: "Wrench", roles: ["system_admin", "company_manager", "supervisor"] },
@@ -27,3 +28,4 @@ export function canAccess(role: UserRole | undefined, href: string): boolean {
   if (!item) return true;
   return item.roles.includes(role);
 }
+{ label: "التقرير الذكي", href: "/reports/smart", iconName: "Camera", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },

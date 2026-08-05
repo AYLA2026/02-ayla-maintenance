@@ -9,25 +9,27 @@ import {
   LayoutDashboard, Inbox, Zap, Calendar, Package,
   Building2, Users, Truck, Wrench, BarChart3, LogOut,
   ChevronDown, ChevronLeft, PanelLeft,
+  FolderKanban, Wallet, Settings, Camera,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Inbox, Zap, Calendar, Package,
   Building2, Users, Truck, Wrench, BarChart3,
+  FolderKanban, Wallet, Settings, Camera,
 };
 
 const SUBMENU: Record<string, { label: string; href: string }[]> = {
   "/complaints": [
-    { label: "سجل البلاغات", href: "/complaints/inbox" },
     { label: "الموزع الذكي", href: "/complaints/distributor" },
+    { label: "سجل البلاغات", href: "/complaints/inbox" },
     { label: "تاريخ البلاغات", href: "/complaints/history" },
   ],
   "/reports": [
-    { label: "تقرير البلاغات", href: "/reports/complaints" },
+    { label: "التقرير الذكي", href: "/reports/smart" },
     { label: "تقرير النظافة", href: "/reports/cleaning" },
     { label: "تقرير الصيانة", href: "/reports/maintenance" },
     { label: "تقرير التكييف", href: "/reports/ac" },
-    { label: "تقرير الأداء", href: "/reports/performance" },
+    { label: "تقرير إغلاق البلاغات", href: "/reports/closure" },
   ],
 };
 

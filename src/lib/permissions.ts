@@ -18,6 +18,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "السيارات", href: "/vehicles", iconName: "Truck", roles: ["system_admin", "company_manager", "supervisor"] },
   { label: "الفنيين", href: "/technicians", iconName: "Wrench", roles: ["system_admin", "company_manager", "supervisor"] },
   { label: "التقارير", href: "/reports", iconName: "BarChart3", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },
+  { label: "التقرير الذكي", href: "/reports/smart", iconName: "Camera", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },
   { label: "إدارة الشركات", href: "/admin/tenants", iconName: "Building2", roles: ["system_admin"] },
 ];
 
@@ -28,4 +29,3 @@ export function canAccess(role: UserRole | undefined, href: string): boolean {
   if (!item) return true;
   return item.roles.includes(role);
 }
-{ label: "التقرير الذكي", href: "/reports/smart", iconName: "Camera", roles: ["system_admin", "company_manager", "supervisor", "site_engineer"] },

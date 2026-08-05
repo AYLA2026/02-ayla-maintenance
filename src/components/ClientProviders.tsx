@@ -14,11 +14,11 @@ export default function ClientProviders({ children }: { children: React.ReactNod
     <AuthProvider>
       {!hideSidebar && <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />}
       <main 
-        className={`min-h-screen transition-all duration-300 ease-in-out overflow-x-hidden px-6 py-6 ${
+        className={`min-h-screen transition-all duration-300 ease-in-out overflow-x-hidden ${
           hideSidebar ? "" : collapsed ? "mr-20" : "mr-64"
         }`}
       >
-        {children}
+        <div className="p-6">{children}</div>
       </main>
     </AuthProvider>
   );

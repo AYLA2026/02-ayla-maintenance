@@ -13,7 +13,7 @@ interface Tenant {
 }
 
 export default function TenantsPage() {
-  const { tenants, user } = useAuth();
+  const { tenants, user, addTenant, removeTenant } = useAuth();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", nameAr: "", color: "#C9A227" });
 
@@ -25,24 +25,21 @@ export default function TenantsPage() {
     );
   }
 
-  const addTenant = () => {
+  const handleAdd = () => {
     if (!form.name.trim() || !form.nameAr.trim()) return;
-    const newTenant: Tenant = {
+    addTenant({
       id: `tnt-${Date.now()}`,
       name: form.name,
       nameAr: form.nameAr,
       color: form.color,
-    };
-    const updated = [...tenants, newTenant];
-    localStorage.setItem("ayla_tenants", JSON.stringify(updated));
-    window.location.reload();
+    });
+    setForm({ name: "", nameAr: "", color: "#C9A227" });
+    setShowAdd(false);
   };
 
-  const removeTenant = (id: string) => {
+  const handleRemove = (id: string) => {
     if (!confirm("تأكيد حذف الشركة؟")) return;
-    const updated = tenants.filter((t) => t.id !== id);
-    localStorage.setItem("ayla_tenants", JSON.stringify(updated));
-    window.location.reload();
+    removeTenant(id);
   };
 
   return (
@@ -73,7 +70,7 @@ export default function TenantsPage() {
                   <p className="text-[10px] text-gray-400 font-mono">{t.id}</p>
                 </div>
               </div>
-              <button onClick={() => removeTenant(t.id)} className="p-2 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition">
+              <button onClick={() => handleRemove(t.id)} className="p-2 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -98,7 +95,7 @@ export default function TenantsPage() {
               </div>
               <div className="mt-6 flex gap-3 justify-end">
                 <button onClick={() => setShowAdd(false)} className="px-5 py-2 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm">إلغاء</button>
-                <button onClick={addTenant} className="px-5 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm">حفظ</button>
+                <button onClick={handleAdd} className="px-5 py-2 rounded-xl bg-[#C9A227] text-[#1A0F09] font-bold text-sm">حفظ</button>
               </div>
             </div>
           </div>

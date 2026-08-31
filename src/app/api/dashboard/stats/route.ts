@@ -1,25 +1,20 @@
 ﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
 
 export async function GET() {
   try {
-    const schools = await prisma.school.count();
-    const complaints = await prisma.complaints.count();
-
-    const inventory = await ((prisma as any).inventoryItem?.count?.() ?? Promise.resolve(0));
-    const teams = await ((prisma as any).team?.count?.() ?? Promise.resolve(0));
-    const vehicles = await ((prisma as any).vehicle?.count?.() ?? Promise.resolve(0));
-    const employees = await ((prisma as any).employee?.count?.() ?? Promise.resolve(0));
-
-    return NextResponse.json({
-      schools,
-      complaints,
-      inventory,
-      teams,
-      vehicles,
-      employees,
-    });
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
-  }
+    const session = await getServerSession();
+    if (!session?.user?.tenantId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const t = session.user.tenantId;
+    const [schools, complaints, inventory, teams, vehicles, technicians] = await Promise.all([
+      prisma.school.count({ where: { tenantId: t } }),
+      prisma.complaint.count({ where: { tenantId: t } }),
+      prisma.inventoryItem.count({ where: { tenantId: t } }),
+      prisma.team.count({ where: { tenantId: t } }),
+      prisma.vehicle.count({ where: { tenantId: t } }),
+      prisma.technician.count({ where: { tenantId: t } }),
+    ]);
+    return NextResponse.json({ schools, complaints, inventory, teams, vehicles, technicians });
+  } catch { return NextResponse.json({ error: "Failed" }, { status: 500 }); }
 }

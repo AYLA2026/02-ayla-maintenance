@@ -18,7 +18,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
           hideSidebar ? "" : collapsed ? "mr-20" : "mr-64"
         }`}
       >
-        <div className="p-6">{children}</div>
+        <div className="p-6 max-w-full">{children}</div>
       </main>
     </AuthProvider>
   );

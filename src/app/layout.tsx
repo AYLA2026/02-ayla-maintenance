@@ -1,5 +1,6 @@
 ﻿import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 import ClientProviders from "@/components/ClientProviders";
 
@@ -14,7 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl">
       <body className={`${inter.className} bg-[#FAF7F2]`}>
-        <ClientProviders>{children}</ClientProviders>
+        <SessionProvider>
+          <ClientProviders>{children}</ClientProviders>
+        </SessionProvider>
       </body>
     </html>
   );
